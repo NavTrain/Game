@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#061019">
-<title>Passive Sonar Search Game v3.9</title>
+<title>Passive Sonar Search Game v4.0</title>
 <style>
 :root{
   --bg:#061019;--panel:#0b1620;--ink:#dbe7f0;--muted:#8ea0ae;
@@ -435,19 +435,35 @@ button:hover{
 }
 
 
-/* v3.9 compass touch handling */
+/* v4.0 compass mobile fix: compass is a deliberate no-scroll control zone */
+.compassTouchZone{
+  touch-action:none !important;
+  overscroll-behavior:contain !important;
+  -webkit-user-select:none !important;
+  user-select:none !important;
+  -webkit-touch-callout:none !important;
+  width:100%;
+  display:block;
+  position:relative;
+}
 #compassCanvas{
   touch-action:none !important;
-  overscroll-behavior:contain;
-  -webkit-user-select:none;
-  user-select:none;
+  overscroll-behavior:contain !important;
+  -webkit-user-select:none !important;
+  user-select:none !important;
+  -webkit-touch-callout:none !important;
+  display:block !important;
+  width:100% !important;
+}
+body.compass-dragging{
+  overscroll-behavior:none !important;
 }
 
 </style>
 </head>
 <body>
 <header>
-  <h1>Passive Sonar Search Game v3.9</h1>
+  <h1>Passive Sonar Search Game v4.0</h1>
   <div class="dev">Real-time passive sonar training game · FS62 contrast build</div>
 </header>
 
@@ -494,8 +510,8 @@ button:hover{
   <div class="controlGrid">
     <div>
       <label>Ordered course: <span id="orderedCourseText">045</span>°T</label>
-      <canvas id="compassCanvas"></canvas>
-      <div class="controlHint">Drag the arrow to set your ordered course.</div>
+      <div id="compassTouchZone" class="compassTouchZone"><canvas id="compassCanvas"></canvas></div>
+      <div class="controlHint">Drag inside the compass to set your ordered course.</div>
     </div>
 
     <div>
@@ -1466,30 +1482,56 @@ function drawCompass(){
   ctx.fillStyle="#f2f6f9";ctx.fillText("white: ordered",10,size.h-24);
   ctx.fillStyle="#4db7ff";ctx.fillText("blue: actual",10,size.h-9);
 }
+function compassEventPoint(e){
+  if(e.touches && e.touches.length) return {x:e.touches[0].clientX,y:e.touches[0].clientY};
+  if(e.changedTouches && e.changedTouches.length) return {x:e.changedTouches[0].clientX,y:e.changedTouches[0].clientY};
+  return {x:e.clientX,y:e.clientY};
+}
 function setCourseFromPointer(e){
+  const pt=compassEventPoint(e);
   const rect=compassCanvas.getBoundingClientRect();
-  const x=(e.clientX||e.touches?.[0]?.clientX)-rect.left;
-  const y=(e.clientY||e.touches?.[0]?.clientY)-rect.top;
+  const x=pt.x-rect.left;
+  const y=pt.y-rect.top;
   const cx=rect.width/2,cy=rect.height/2;
   orderedCourse=norm360(Math.atan2(x-cx,cy-y)*180/Math.PI);
   drawAll();
 }
-compassCanvas.addEventListener("pointerdown",e=>{
-  // The compass is a deliberate no-scroll control zone on mobile.
-  e.preventDefault();
+function beginCompassDrag(e){
+  if(e.cancelable) e.preventDefault();
+  e.stopPropagation();
   draggingCompass=true;
-  compassCanvas.setPointerCapture(e.pointerId);
+  document.body.classList.add("compass-dragging");
+  try{
+    if(e.pointerId!==undefined && compassCanvas.setPointerCapture) compassCanvas.setPointerCapture(e.pointerId);
+  }catch(err){}
   setCourseFromPointer(e);
-});
-compassCanvas.addEventListener("pointermove",e=>{
+}
+function moveCompassDrag(e){
   if(!draggingCompass) return;
-  e.preventDefault();
+  if(e.cancelable) e.preventDefault();
+  e.stopPropagation();
   setCourseFromPointer(e);
-});
-compassCanvas.addEventListener("pointerup",e=>{draggingCompass=false});
-compassCanvas.addEventListener("pointercancel",e=>{draggingCompass=false});
-compassCanvas.addEventListener("touchstart",e=>{e.preventDefault()},{passive:false});
-compassCanvas.addEventListener("touchmove",e=>{e.preventDefault()},{passive:false});
+}
+function endCompassDrag(e){
+  draggingCompass=false;
+  document.body.classList.remove("compass-dragging");
+}
+const compassZone=document.getElementById("compassTouchZone")||compassCanvas;
+
+compassZone.addEventListener("pointerdown",beginCompassDrag,{passive:false});
+compassZone.addEventListener("pointermove",moveCompassDrag,{passive:false});
+compassZone.addEventListener("pointerup",endCompassDrag,{passive:false});
+compassZone.addEventListener("pointercancel",endCompassDrag,{passive:false});
+
+compassZone.addEventListener("touchstart",beginCompassDrag,{passive:false});
+compassZone.addEventListener("touchmove",moveCompassDrag,{passive:false});
+compassZone.addEventListener("touchend",endCompassDrag,{passive:false});
+compassZone.addEventListener("touchcancel",endCompassDrag,{passive:false});
+
+document.addEventListener("touchmove",e=>{
+  if(draggingCompass && e.cancelable) e.preventDefault();
+},{passive:false});
+
 function setBearingFromWaterfallPointer(e){
   const rect=waterfallCanvas.getBoundingClientRect();
   const x=(e.clientX||e.touches?.[0]?.clientX)-rect.left;
