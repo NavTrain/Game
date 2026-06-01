@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#061019">
-<title>Passive Sonar Search Game v3.3</title>
+<title>Passive Sonar Search Game v3.7</title>
 <style>
 :root{
   --bg:#061019;--panel:#0b1620;--ink:#dbe7f0;--muted:#8ea0ae;
@@ -315,11 +315,130 @@ button:hover{
   }
 }
 
+
+/* v3.4 image background cleanup + tactical plot scale */
+.assetFrame{
+  background:transparent !important;
+  border:none !important;
+  box-shadow:none !important;
+  padding:0 !important;
+}
+.shipFrame,.mpaFrame{
+  background:transparent !important;
+  border:none !important;
+  box-shadow:none !important;
+  padding:0 !important;
+}
+.shipImage,.mpaImage{
+  background:transparent !important;
+  mix-blend-mode:normal;
+}
+.plotScaleBarWrap{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin-top:10px;
+  padding-top:8px;
+  border-top:1px solid rgba(120,150,170,.28);
+  flex-wrap:wrap;
+}
+.plotScaleBar{
+  display:flex;
+  width:96px;
+  height:12px;
+  border:1px solid #86a7bd;
+  border-radius:2px;
+  overflow:hidden;
+  background:#0b1b2a;
+  box-shadow:0 0 0 1px rgba(255,255,255,.03) inset;
+}
+.plotScaleSegment{
+  flex:1;
+  background:#dce8f0;
+}
+.plotScaleSegment.filled{
+  background:#7aa7c5;
+}
+.plotScaleLabel{
+  font-size:12px;
+  color:#d7e4ee;
+  letter-spacing:.2px;
+}
+@media (max-width:700px){
+  .plotScaleBarWrap{gap:8px;margin-top:8px;padding-top:7px}
+  .plotScaleBar{width:82px;height:10px}
+  .plotScaleLabel{font-size:11.5px}
+}
+
+
+/* v3.6 tactical plot priority */
+#plotSection{
+  padding-bottom:8px;
+}
+#plotCanvas{
+  display:block;
+  width:100%;
+}
+@media (min-width:920px){
+  #plotCanvas{height:640px;min-height:560px}
+}
+@media (min-width:701px) and (max-width:919px){
+  #plotCanvas{height:520px;min-height:460px}
+}
+@media (max-width:700px){
+  #plotCanvas{height:min(82vw,430px);min-height:330px}
+}
+
+
+/* v3.7 image presentation cleanup */
+.assetFrame,
+.shipFrame,
+.mpaFrame{
+  background:transparent !important;
+  border:none !important;
+  box-shadow:none !important;
+  padding:0 !important;
+  overflow:visible !important;
+}
+
+.assetImage,
+.shipImage,
+.mpaImage{
+  display:block !important;
+  width:100% !important;
+  height:auto !important;
+  max-width:100% !important;
+  max-height:none !important;
+  object-fit:fill !important;
+  object-position:center center !important;
+  background:transparent !important;
+  border:none !important;
+  box-shadow:none !important;
+  line-height:0 !important;
+  vertical-align:middle !important;
+}
+
+.shipFrame{
+  margin-top:4px;
+}
+
+.mpaFrame{
+  margin-top:4px;
+}
+
+.shipImage{
+  filter: drop-shadow(0 2px 2px rgba(0,0,0,.28));
+}
+
+.mpaImage{
+  filter: drop-shadow(0 2px 2px rgba(0,0,0,.24));
+}
+
 </style>
 </head>
 <body>
 <header>
-  <h1>Passive Sonar Search Game v3.3</h1>
+  <h1>Passive Sonar Search Game v3.7</h1>
   <div class="dev">Real-time passive sonar training game · FS62 contrast build</div>
 </header>
 
@@ -1105,7 +1224,7 @@ function drawPlot(){
   const m=26,s=Math.min((size.w-2*m)/AREA,(size.h-2*m)/AREA),ox=m+((size.w-2*m)-AREA*s)/2,oy=m+AREA*s+((size.h-2*m)-AREA*s)/2;
   ctx.strokeStyle="#1b2b38";ctx.lineWidth=1;for(let i=0;i<=AREA;i+=5){let x=ox+i*s;ctx.beginPath();ctx.moveTo(x,oy-AREA*s);ctx.lineTo(x,oy);ctx.stroke();let y=oy-i*s;ctx.beginPath();ctx.moveTo(ox,y);ctx.lineTo(ox+AREA*s,y);ctx.stroke()}
   ctx.strokeStyle="#314656";ctx.lineWidth=2;ctx.strokeRect(ox,oy-AREA*s,AREA*s,AREA*s);
-  ctx.strokeStyle="#d9e6ef";ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(ox+10,oy+18);ctx.lineTo(ox+10+5*s,oy+18);ctx.stroke();ctx.fillStyle="#d9e6ef";ctx.font="bold 11px Arial";ctx.fillText("Scale 5 km",ox+10,oy+35);
+  ctx.strokeStyle="#d9e6ef";ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(ox+10,oy+18);ctx.lineTo(ox+10+5*s,oy+18);ctx.stroke();ctx.fillStyle="#d9e6ef";ctx.font="bold 11px Arial";ctx.fillText("5K",ox+10,oy+35);
 
   drawTrack(ctx,ownTrack,size,"#4db7ff");
   for(const c of contacts){
