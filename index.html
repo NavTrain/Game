@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#061019">
-<title>Passive Sonar Search Game v3.2</title>
+<title>Passive Sonar Search Game v3.3</title>
 <style>
 :root{
   --bg:#061019;--panel:#0b1620;--ink:#dbe7f0;--muted:#8ea0ae;
@@ -173,12 +173,154 @@ section{position:static !important}
   .controlHint{font-size:11.5px}
 }
 
+
+/* v3.3 contrast and usability pass
+   Aim: retain dark naval display feel but improve panel separation, text contrast and control visibility. */
+:root{
+  --bg:#0a1724;
+  --panel:#122638;
+  --panel2:#183149;
+  --panel3:#203b55;
+  --ink:#f1f7fb;
+  --muted:#c0cfdb;
+  --line:#4d6a82;
+  --blue:#58bfff;
+  --green:#55e87a;
+  --gold:#ffd36f;
+  --red:#ff6b6b;
+}
+body{
+  background:linear-gradient(180deg,#081522 0%,#0b1d2c 42%,#0a1724 100%);
+  color:var(--ink);
+}
+header{
+  background:#07111d;
+  border-bottom:1px solid #52708a;
+}
+section,.box,.controlsPanel,.mpaPanel,.revealPanel{
+  background:linear-gradient(180deg,var(--panel2) 0%,var(--panel) 100%) !important;
+  border-color:var(--line) !important;
+  box-shadow:0 1px 0 rgba(255,255,255,.09) inset, 0 8px 18px rgba(0,0,0,.22);
+}
+h2{
+  color:#f2f8fd;
+  text-shadow:0 1px 0 rgba(0,0,0,.45);
+}
+.signal,.assetFrame,input,select,.posBox,.shipStatus div,#compassCanvas,#plotCanvas,#waterfallCanvas{
+  background:#0b1b2a !important;
+  border-color:#54738c !important;
+}
+.signal{
+  color:#eef6fb;
+}
+.signal .stamp,.dev{
+  color:#ffd36f;
+}
+label{
+  color:#d8e5ef;
+}
+.objectiveBox span,.mpaStatus,.launchHint,.revealText,.controlHint{
+  color:#d2dee8 !important;
+}
+.elapsedBox{
+  color:#ffffff;
+  background:#0d2234;
+  border:1px solid #5b7891;
+  border-radius:8px;
+  padding:8px 10px;
+  display:inline-block;
+  min-width:132px;
+  text-align:center;
+  box-shadow:0 0 0 1px rgba(255,255,255,.04) inset;
+}
+.readout{
+  border-top-color:#587690;
+}
+.shipStatus div{
+  border:1px solid #54738c;
+  background:#0e2235 !important;
+}
+.shipStatus b{
+  color:#ffffff;
+}
+.shipStatus span{
+  color:#dce9f2;
+}
+.prominentPos{
+  background:#10283d !important;
+  border-color:#77a2c2 !important;
+  color:#ffffff !important;
+  box-shadow:0 0 0 1px rgba(120,180,220,.12) inset;
+}
+button{
+  background:#1d3d59;
+  border-color:#6f91aa;
+  color:#f3f9fd;
+}
+button:hover{
+  background:#254c6e;
+}
+.primary{
+  background:#1e6593;
+  border-color:#7bb9dc;
+}
+.launchBtn{
+  background:#8d3030 !important;
+  border-color:#ff8b8b !important;
+  color:#ffffff !important;
+}
+.launchBtn.launched{
+  background:#4a2b2b !important;
+  border-color:#8b5e5e !important;
+  color:#dfd0d0 !important;
+}
+.mpaBtn{
+  background:#1d4d69;
+  border-color:#7aa4bd;
+}
+.revealBtn{
+  background:#20384f;
+  border-color:#7897ad;
+}
+.revealBtn.active{
+  background:#4a2b2b;
+  border-color:#a17777;
+}
+.assetFrame{
+  background:linear-gradient(180deg,#10263a 0%,#0b1a29 100%) !important;
+}
+#plotCanvas{
+  background:#081522 !important;
+}
+#waterfallCanvas{
+  background:#04090d !important;
+}
+.modalBox{
+  background:#13283b;
+  border-color:#7fa3bb;
+}
+.modalTitle{
+  color:#ffffff;
+}
+.modalText{
+  color:#e7f0f6;
+}
+@media (max-width:700px){
+  .elapsedBox{
+    font-size:32px;
+    min-width:118px;
+  }
+  section,.box,.controlsPanel,.mpaPanel,.revealPanel{
+    border-width:1.5px;
+  }
+}
+
 </style>
 </head>
 <body>
 <header>
-  <h1>Passive Sonar Search Game v3.2</h1>
-  <div class="dev">Real-time passive sonar training game · FS62 build</div>
+  <h1>Passive Sonar Search Game v3.3</h1>
+  <div class="dev">Real-time passive sonar training game · FS62 contrast build</div>
 </header>
 
 <div class="wrap">
