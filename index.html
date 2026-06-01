@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#061019">
-<title>Passive Sonar Search Game v4.7</title>
+<title>Passive Sonar Search Game v4.8</title>
 <style>
 :root{
   --bg:#061019;--panel:#0b1620;--ink:#dbe7f0;--muted:#8ea0ae;
@@ -712,11 +712,26 @@ html.mobile-platform .opsLog{
   .opsLog{height:68px;font-size:10.8px}
 }
 
+
+/* v4.8 time progression slider */
+.timeScaleTicks{
+  display:flex;
+  justify-content:space-between;
+  margin-top:4px;
+  font-size:10.5px;
+  color:#d2dee8;
+  font-weight:800;
+  letter-spacing:.2px;
+}
+#timeScale{
+  margin-top:3px;
+}
+
 </style>
 </head>
 <body>
 <header>
-  <h1>Passive Sonar Search Game v4.7</h1>
+  <h1>Passive Sonar Search Game v4.8</h1>
   <div class="dev">Real-time passive sonar training game · FS62 contrast build</div>
 </header>
 
@@ -736,18 +751,14 @@ html.mobile-platform .opsLog{
   </div>
 
   <div class="buttons">
-    <button class="primary" id="playBtn" onclick="togglePlay()">Play / Pause</button>
+    <button class="primary" id="playBtn" onclick="togglePlay()">Play</button>
     <button onclick="newGame()">New game</button>
   </div>
 
   <div class="timeControl">
-    <label>Time progression</label>
-    <select id="timeScale">
-      <option value="1" selected>x1</option>
-      <option value="3">x3</option>
-      <option value="5">x5</option>
-      <option value="10">x10</option>
-    </select>
+    <label>Time progression: <span id="timeScaleText">x1</span></label>
+    <input id="timeScale" type="range" min="1" max="4" step="1" value="1" aria-label="Time progression">
+    <div class="timeScaleTicks"><span>x1</span><span>x3</span><span>x5</span><span>x10</span></div>
   </div>
 
   <div class="win" id="winBox"></div>
@@ -945,8 +956,8 @@ function setupTraffic(){
   contacts.push({type:"fishing",id:"FV",x:fv.x,y:fv.y,course:fv.course,speed:0.6+Math.random()*0.8,strength:0.65,visible:true,active:true,track:[]});
 }
 function newGame(){
-  running=false;won=false;document.getElementById("playBtn").textContent="Play / Pause";document.getElementById("winBox").style.display="none";document.getElementById("resultModal").style.display="none";const rm=document.getElementById("revealModal");if(rm)rm.style.display="none";torpedo=null;fired=false;const lb=document.getElementById("launchBtn");if(lb){lb.disabled=false;lb.classList.remove("launched");lb.textContent="Launch torpedoes";}
-  lastFrame=null;simTime=0;sampleAcc=0;noiseAcc=0;orderedCourse=45;orderedSpeed=10;selectedBearing=45;listeningQuality=0;practiceReveal=false;resetMPA();resetRevealUI();document.getElementById("speed").value=10;
+  running=false;won=false;document.getElementById("playBtn").textContent="Play";document.getElementById("winBox").style.display="none";document.getElementById("resultModal").style.display="none";const rm=document.getElementById("revealModal");if(rm)rm.style.display="none";torpedo=null;fired=false;const lb=document.getElementById("launchBtn");if(lb){lb.disabled=false;lb.classList.remove("launched");lb.textContent="Launch torpedoes";}
+  lastFrame=null;simTime=0;sampleAcc=0;noiseAcc=0;orderedCourse=45;orderedSpeed=10;selectedBearing=45;listeningQuality=0;practiceReveal=false;resetMPA();resetRevealUI();document.getElementById("speed").value=10;updateTimeScaleLabel();
   own={x:3,y:3,course:45,speed:6};
   ownTrack=[{x:own.x,y:own.y,t:0}];
   contacts=[];
@@ -958,7 +969,7 @@ function newGame(){
   for(const c of contacts)c.track=[{x:c.x,y:c.y,t:0}];
   samples=[];noise=[];activePings=[];preloadNoise();addSamples();drawAll();resetOpsLog();
 }
-function togglePlay(){if(won)return;running=!running;document.getElementById("playBtn").textContent=running?"Pause":"Play / Pause";lastFrame=null;requestAnimationFrame(loop)}
+function togglePlay(){if(won)return;running=!running;document.getElementById("playBtn").textContent=running?"Pause":"Play";lastFrame=null;requestAnimationFrame(loop)}
 
 function ownNoiseLevel(){
   const s=own ? own.speed : 5;
@@ -1310,8 +1321,8 @@ function opsSubReport(reportType="INITIAL"){
     "-PASSIVE BROADBAND CONTACT-OVER";
 }
 function opsOwnMovementReport(force=false){
-  const course=Math.round(actualCourse);
-  const speed=Math.round(actualSpeed);
+  const course=Math.round(own.course);
+  const speed=Math.round(own.speed);
   if(!force && opsLastOwnCourse!==null){
     const cDelta=Math.abs(((course-opsLastOwnCourse+540)%360)-180);
     const sDelta=Math.abs(speed-opsLastOwnSpeed);
@@ -1351,9 +1362,9 @@ function resetOpsLog(){
   opsAssignTracks();
 
   addOpsTransmission("OTC THIS IS FS62-COMMS CHECK-TG SURFACE NET OPEN-OVER","admin");
-  addOpsTransmission("OTC THIS IS FS62-UPDATE-OWN COURSE "+opsPad(actualCourse,3)+"-SPEED "+Math.round(actualSpeed)+"-SEARCH COMMENCED-OVER","admin");
-  opsLastOwnCourse=Math.round(actualCourse);
-  opsLastOwnSpeed=Math.round(actualSpeed);
+  addOpsTransmission("OTC THIS IS FS62-UPDATE-OWN COURSE "+opsPad(own.course,3)+"-SPEED "+Math.round(own.speed)+"-SEARCH COMMENCED-OVER","admin");
+  opsLastOwnCourse=Math.round(own.course);
+  opsLastOwnSpeed=Math.round(own.speed);
   opsLastOwnReport=simTime;
 
   const neutrals=contacts.filter(c=>c.type==="merchant"||c.type==="fishing");
@@ -2076,6 +2087,15 @@ function showResult(title,text){
 function closeResultAndNewGame(){
   document.getElementById("resultModal").style.display="none";
   
+function getTimeScaleValue(){
+  const el=document.getElementById("timeScale");
+  const raw=el ? Number(el.value) : 1;
+  return raw===4 ? 10 : raw===3 ? 5 : raw===2 ? 3 : 1;
+}
+function updateTimeScaleLabel(){
+  const txt=document.getElementById("timeScaleText");
+  if(txt) txt.textContent="x"+getTimeScaleValue();
+}
 function updatePlatformMode(){
   const coarse=window.matchMedia("(hover: none) and (pointer: coarse)").matches;
   const narrow=window.matchMedia("(max-width: 919px)").matches;
@@ -2086,6 +2106,7 @@ function updatePlatformMode(){
 updatePlatformMode();
 window.addEventListener("resize",updatePlatformMode);
 
+updateTimeScaleLabel();
 newGame();
 }
 function updateTorpedo(dt){
@@ -2128,7 +2149,7 @@ function updateTorpedo(dt){
     torpedo.travelled += step;
     if(torpedo.travelled>=torpedo.maxRange){
       running=false;
-      document.getElementById("playBtn").textContent="Play / Pause";
+      document.getElementById("playBtn").textContent="Play";
       torpedo=null;
       addOpsTransmission("OTC THIS IS FS62-ASSESSMENT-TORPEDO RUN COMPLETE-TARGET MISSED-OVER","alert");
       showResult("Target missed","Mission failed. Try again.");
@@ -2204,7 +2225,8 @@ function drawAll(){drawPlot();drawCompass();drawWaterfall();updateReadout();upda
 function loop(t){if(!running)return;if(lastFrame===null)lastFrame=t;const dt=Math.min(.05,(t-lastFrame)/1000);lastFrame=t;update(dt);drawAll();requestAnimationFrame(loop)}
 document.getElementById("speed").addEventListener("input",drawAll);
 document.getElementById("speed").addEventListener("change",drawAll);
-document.getElementById("timeScale").addEventListener("change",drawAll);
+document.getElementById("timeScale").addEventListener("input",()=>{updateTimeScaleLabel();drawAll();});
+document.getElementById("timeScale").addEventListener("change",()=>{updateTimeScaleLabel();drawAll();});
 plotCanvas.addEventListener("pointerdown",handlePlotPointer);
 window.addEventListener("resize",drawAll);
 newGame();
