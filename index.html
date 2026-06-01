@@ -1,0 +1,1328 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#061019">
+<title>Passive Sonar Search Game v3.0</title>
+<style>
+:root{
+  --bg:#061019;--panel:#0b1620;--ink:#dbe7f0;--muted:#8ea0ae;
+  --blue:#4db7ff;--green:#49ff6a;--gold:#ffd166;--red:#ff5f5f;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;overflow-x:hidden}
+header{position:sticky;top:0;z-index:20;padding:8px 10px;background:#03080d;border-bottom:1px solid #263746}
+h1{margin:0;font-size:15px;letter-spacing:.2px}.dev{margin-top:3px;color:var(--gold);font-size:10px;font-weight:800;text-transform:uppercase}
+.wrap{display:flex;flex-direction:column;gap:8px;padding:8px;max-width:1040px;margin:0 auto}
+section,.box,.controlsPanel{background:var(--panel);border:1px solid #2a3c4a;border-radius:8px;padding:10px;box-shadow:0 1px 0 rgba(255,255,255,.05) inset}
+h2{margin:0 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:.7px;color:#cfdae4}
+.signal{background:#08111a;border:1px solid #314656;border-radius:7px;padding:9px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;line-height:1.35;color:#dbe7f0}
+.signal b{color:#fff}.signal .stamp{color:#ffd166;font-weight:800}
+label{display:block;font-size:10.5px;font-weight:800;margin:7px 0 3px;color:#b9c8d4;text-transform:uppercase;letter-spacing:.35px}
+input,select,button{width:100%;font-size:16px;min-height:42px;padding:8px;border:1px solid #3b5366;border-radius:7px;background:#061019;color:#e5eef7}
+input[type=range]{padding:0;accent-color:#4db7ff}
+.buttons{display:grid;grid-template-columns:1fr;gap:8px;margin-top:10px}
+button{font-weight:850;background:#122334}.primary{background:#164b73;border-color:#2674aa}
+.readout{margin-top:10px;border-top:1px solid #2a3c4a;padding-top:10px}.readout b{color:#fff}.elapsedBox{font-size:34px;font-weight:900;letter-spacing:.5px;color:#fff;line-height:1}.objectiveBox{margin-top:8px;font-size:13px;line-height:1.35;color:#dbe7f0}.objectiveBox span{display:block;color:#8ea0ae;font-size:12px;margin-top:4px}.posBox{margin-top:8px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;color:#8ea0ae;line-height:1.3}
+.box{padding:8px;scroll-margin-top:62px}.controlsPanel{margin-top:8px}
+canvas{width:100%;display:block;border-radius:6px;border:1px solid #304454;background:#050b11}
+#plotCanvas{height:52vh;min-height:340px;max-height:560px}
+#waterfallCanvas{height:38vh;min-height:260px;max-height:420px;touch-action:pan-y}
+#compassCanvas{height:230px;min-height:230px;touch-action:none;border:none;background:#08111a}
+.controlGrid{display:grid;grid-template-columns:1fr;gap:8px}
+.small{color:var(--muted);font-size:11.5px;line-height:1.3;margin-top:6px}.shipStatus{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}.shipStatus div{background:#061019;border:1px solid #2a3c4a;border-radius:6px;padding:6px 7px;font-size:11.5px;line-height:1.35}.shipStatus b{display:block;color:#fff;font-size:12px}
+.win{margin-top:8px;padding:9px;border:1px solid #49ff6a;border-radius:7px;color:#061019;background:#49ff6a;font-weight:900;display:none}.launchWrap{margin-top:10px}.launchBtn{width:100%;min-height:52px;border-radius:8px;border:1px solid #7a2a2a;background:#7a2424;color:#fff;font-size:16px;font-weight:900;text-transform:uppercase;letter-spacing:.5px}.launchBtn:disabled{opacity:1}.launchBtn.launched{background:#3a1f1f;border-color:#5a3333;color:#b8aaaa}.mpaPanel{margin-top:10px;padding:9px;border:1px solid #314656;border-radius:8px;background:#08111a}.mpaPanel h2{margin-bottom:6px}.mpaText{font-size:12.5px;line-height:1.35;color:#dbe7f0}.mpaStatus{margin-top:6px;color:#8ea0ae;font-size:12px;line-height:1.35}.mpaEta{display:block;margin-top:4px;font-size:19px;font-weight:900;color:#ffd166}.mpaBtn{margin-top:8px}.mpaBtn:disabled{opacity:.55}.revealPanel{margin-top:8px;padding:9px;border:1px solid #314656;border-radius:8px;background:#08111a}.revealBtn{background:#122334;border-color:#3b5366}.revealBtn.active{background:#3a1f1f;border-color:#7a2a2a;color:#ffd0d0}.revealText{margin-top:5px;color:#8ea0ae;font-size:11.5px;line-height:1.3}.launchHint{margin-top:5px;color:#8ea0ae;font-size:11.5px;line-height:1.3}.modalOverlay{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;z-index:99;padding:16px}.modalBox{width:min(420px,92vw);background:#08111a;border:1px solid #4a6173;border-radius:10px;padding:18px;box-shadow:0 10px 28px rgba(0,0,0,.45);text-align:center}.modalTitle{font-size:22px;font-weight:900;color:#fff;margin-bottom:8px}.modalText{font-size:14px;line-height:1.45;color:#dbe7f0;margin-bottom:14px}.modalButtons{display:grid;grid-template-columns:1fr 1fr;gap:8px}.dangerBtn{background:#5a1b1b;border-color:#7a2a2a;color:#fff}
+@media (min-width:920px){
+  header{position:static;padding:10px 12px}h1{font-size:18px}.dev{font-size:12px}
+  .wrap{display:grid;grid-template-columns:320px 1fr;align-items:start;max-width:none;margin:0}
+  section{position:sticky;top:8px}label{font-size:12px}.readout{font-size:13px}
+  .desktopTop{display:grid;grid-template-columns:340px 1fr;gap:8px;align-items:start}
+  #plotCanvas{height:500px;min-height:500px}#waterfallCanvas{height:300px;min-height:300px}
+  .controlGrid{grid-template-columns:1fr;align-items:center}
+}
+
+@media (max-width:700px){
+  header{position:static;padding:8px 10px}
+  h1{font-size:14px;line-height:1.2}
+  .dev{font-size:9.5px}
+  .wrap{padding:6px;gap:7px;max-width:none}
+  section,.box,.controlsPanel{padding:8px;border-radius:7px}
+  h2{font-size:12px;margin-bottom:6px}
+  .signal{font-size:11.5px;line-height:1.28;padding:8px}
+  .buttons{grid-template-columns:1fr 1fr;gap:7px}
+  input,select,button{font-size:15px;min-height:40px;padding:7px}
+  .readout{margin-top:8px;padding-top:8px}
+  .elapsedBox{font-size:30px}
+  .objectiveBox{font-size:12px}
+  .launchBtn{min-height:48px;font-size:15px}
+  .launchHint,.mpaStatus,.revealText{font-size:11px}
+  .mpaPanel,.revealPanel{padding:8px}
+  .desktopTop{display:flex;flex-direction:column;gap:7px}
+  .controlGrid{display:grid;grid-template-columns:1fr;gap:6px}
+  .shipStatus{grid-template-columns:1fr 1fr;gap:6px}
+  #compassCanvas{height:210px;min-height:210px;touch-action:pan-y}
+  #plotCanvas{height:min(72vw,390px);min-height:300px;touch-action:manipulation}
+  #waterfallCanvas{height:300px;min-height:260px;touch-action:pan-y}
+  .posBox{font-size:11px;overflow-wrap:anywhere}
+  .modalBox{width:94vw;padding:14px}
+  .modalTitle{font-size:19px}
+  .modalText{font-size:13px}
+}
+@media (min-width:701px) and (max-width:919px){
+  header{position:static}
+  .wrap{max-width:860px}
+  .desktopTop{display:grid;grid-template-columns:310px 1fr;gap:8px;align-items:start}
+  .controlGrid{grid-template-columns:1fr}
+  #plotCanvas{height:460px;min-height:420px}
+  #waterfallCanvas{height:310px;min-height:280px}
+}
+
+</style>
+</head>
+<body>
+<header>
+  <h1>Passive Sonar Search Game v3.0</h1>
+  <div class="dev">Real-time passive sonar training game · GitHub/mobile build</div>
+</header>
+
+<div class="wrap">
+<section>
+<h2>Mission Briefing</h2>
+<div class="signal">
+  <div class="stamp">CONFIDENTIAL</div>
+  <div>TO: COMMANDER FFG 116</div>
+  <br>
+  <div><b>ENEMY SSK</b> assessed within 20 km to the north-east.</div>
+  <div>Locate the hostile submarine.</div>
+  <div>Close to within <b>3,000 yards</b>, launch torpedoes and destroy.</div>
+  <br>
+  <div>Merchant traffic and fishing activity are present in the area.</div>
+</div>
+
+<div class="buttons">
+  <button class="primary" id="playBtn" onclick="togglePlay()">Play / Pause</button>
+  <button onclick="newGame()">New game</button>
+</div>
+<div class="timeControl">
+  <label>Time progression</label>
+  <select id="timeScale">
+    <option value="1" selected>x1</option>
+    <option value="3">x3</option>
+    <option value="5">x5</option>
+    <option value="10">x10</option>
+  </select>
+</div>
+
+<div class="win" id="winBox"></div>
+<div class="readout" id="readout"></div>
+<div class="launchWrap">
+  <button id="launchBtn" class="launchBtn" onclick="launchTorpedoes()">Launch torpedoes</button>
+  <div class="launchHint">Place the bearing line on the intended target bearing. Fire when ready. Correct bearing and range are required. Only one salvo available.</div>
+</div>
+<div class="mpaPanel">
+  <h2>MPA Support</h2>
+  <div class="mpaText">Maritime aircraft standing by with five active sonar buoys.</div>
+  <button id="mpaBtn" class="mpaBtn" onclick="taskMPA()">Task MPA</button>
+  <div class="mpaStatus" id="mpaStatus">Ready. Task once only.</div>
+  <div class="mpaStatus">Active buoys detect the SSK inside 2,500 yards. Yellow active pings appear on the waterfall. A red ring indicates detection.</div>
+</div>
+</section>
+
+<div>
+  <div class="desktopTop">
+    <div class="controlsPanel">
+      <h2>Own Ship Orders</h2>
+      <div class="controlGrid">
+        <div>
+          <label>Ordered course: <span id="orderedCourseText">045</span>°T</label>
+          <canvas id="compassCanvas"></canvas>
+        </div>
+        <div>
+          <label>Ordered speed: <span id="orderedSpeedText">10</span> kt</label>
+          <input id="speed" type="range" min="0" max="25" step="1" value="10">
+          <div class="shipStatus">
+            <div><b>Ordered</b><span id="orderedStatus">045°T / 10 kt</span></div>
+            <div><b>Actual</b><span id="actualStatus">045°T / 5 kt</span></div>
+          </div>
+          <div class="posBox" id="orderPosBox">POS: 51°50.000'N  008°17.000'W</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="box" id="plotSection">
+      <h2>Tactical Plot</h2>
+      <canvas id="plotCanvas"></canvas>
+    </div>
+  </div>
+
+  <div class="box" id="waterfallSection">
+    <h2>Broadband Passive Waterfall</h2>
+    <canvas id="waterfallCanvas"></canvas>
+  </div>
+
+  <div class="revealPanel">
+    <button id="revealBtn" class="revealBtn" onclick="confirmRevealSubmarine()">Reveal submarine position</button>
+    <div class="revealText" id="revealText">Training aid. Revealing the SSK disables the time score.</div>
+  </div>
+</div>
+</div>
+
+
+<div class="modalOverlay" id="resultModal">
+  <div class="modalBox">
+    <div class="modalTitle" id="modalTitle">Result</div>
+    <div class="modalText" id="modalText">Text</div>
+    <button class="primary" onclick="closeResultAndNewGame()">Play again</button>
+  </div>
+</div>
+<div class="modalOverlay" id="revealModal">
+  <div class="modalBox">
+    <div class="modalTitle">Reveal SSK?</div>
+    <div class="modalText">Are you sure you wish to reveal the submarine? Your score will not count for this exercise.</div>
+    <div class="modalButtons">
+      <button onclick="cancelRevealSubmarine()">No</button>
+      <button class="dangerBtn" onclick="applyRevealSubmarine()">Yes, reveal</button>
+    </div>
+  </div>
+</div>
+<script>
+const AREA=20, HIST=300, WIN_KM=3000*0.0009144, BUOY_DETECT_KM=2500*0.0009144, MIN_SUB_START=9.0;
+let running=false,won=false,lastFrame=null,simTime=0;
+let own,contacts=[],ownTrack=[],samples=[],noise=[],activePings=[];
+let sampleAcc=0,noiseAcc=0,orderedCourse=45,orderedSpeed=10,lastSubBearing=45,selectedBearing=45,listeningQuality=0,torpedo=null,fired=false,mpa=null,practiceReveal=false;
+let draggingCompass=false;
+
+const plotCanvas=document.getElementById("plotCanvas"), plotCtx=plotCanvas.getContext("2d");
+const waterfallCanvas=document.getElementById("waterfallCanvas"), wfCtx=waterfallCanvas.getContext("2d");
+const compassCanvas=document.getElementById("compassCanvas"), compassCtx=compassCanvas.getContext("2d");
+
+function norm360(x){return ((x%360)+360)%360}
+function rad(d){return d*Math.PI/180}
+function unit(c){const a=rad(c);return{x:Math.sin(a),y:Math.cos(a)}}
+function kmPerSec(k){return k*1.852/3600}
+function dist(a,b){return Math.hypot(b.x-a.x,b.y-a.y)}
+function bearing(a,b){return norm360(Math.atan2(b.x-a.x,b.y-a.y)*180/Math.PI)}
+function signedBearing(b){b=norm360(b);return b>180?b-360:b}
+function clamp(x,a,b){return Math.max(a,Math.min(b,x))}
+function angleDiff(target,current){return ((target-current+540)%360)-180}
+function resize(c){const r=c.getBoundingClientRect(),d=window.devicePixelRatio||1;c.width=Math.floor(r.width*d);c.height=Math.floor(r.height*d);const ctx=c.getContext("2d");ctx.setTransform(d,0,0,d,0,0);return{w:r.width,h:r.height}}
+
+function placeSub(){
+  // Playable setup: the SSK begins in the north-east sector, hidden but reachable.
+  // It is not placed directly ahead every time, so the bearing trace still matters.
+  for(let i=0;i<500;i++){
+    const brg=35+Math.random()*55;
+    const rng=10.5+Math.random()*4.0;
+    const u=unit(brg);
+    const p={x:own.x+u.x*rng,y:own.y+u.y*rng};
+    if(p.x>5 && p.x<AREA-2 && p.y>5 && p.y<AREA-2)return p;
+  }
+  return{x:AREA-5,y:AREA-5};
+}
+function setupTraffic(){
+  // Neutral contacts are deliberately separated at generation so they do not stack.
+  // Merchants cross the smaller operating area, increasing the chance of useful interference.
+  const placed=[];
+  const minNeutralSep=4.5; // km
+
+  function separated(p){
+    for(const q of placed){
+      if(dist(p,q)<minNeutralSep) return false;
+    }
+    return true;
+  }
+
+  function courseTo(from,to){
+    return bearing(from,to);
+  }
+
+  function merchantFrom(side){
+    let p,target;
+    if(side==="W"){
+      p={x:1+Math.random()*2.2,y:3+Math.random()*(AREA-6)};
+      target={x:AREA,y:3.5+Math.random()*(AREA-7)};
+    }else if(side==="E"){
+      p={x:AREA-3.2+Math.random()*2.2,y:3+Math.random()*(AREA-6)};
+      target={x:0,y:3.5+Math.random()*(AREA-7)};
+    }else if(side==="S"){
+      p={x:3+Math.random()*(AREA-6),y:1+Math.random()*2.2};
+      target={x:3.5+Math.random()*(AREA-7),y:AREA};
+    }else{
+      p={x:3+Math.random()*(AREA-6),y:AREA-3.2+Math.random()*2.2};
+      target={x:3.5+Math.random()*(AREA-7),y:0};
+    }
+    p.course=courseTo(p,target);
+    return p;
+  }
+
+  function pickMerchant(preferredSides){
+    for(let attempt=0;attempt<100;attempt++){
+      const side=preferredSides[Math.floor(Math.random()*preferredSides.length)];
+      const p=merchantFrom(side);
+      if(separated(p)){
+        placed.push({x:p.x,y:p.y});
+        return p;
+      }
+    }
+    const p=merchantFrom(preferredSides[0]);
+    placed.push({x:p.x,y:p.y});
+    return p;
+  }
+
+  function pickFishing(){
+    for(let attempt=0;attempt<120;attempt++){
+      const p={x:5+Math.random()*(AREA-10),y:5+Math.random()*(AREA-10),course:Math.random()*360};
+      if(separated(p)){
+        placed.push({x:p.x,y:p.y});
+        return p;
+      }
+    }
+    const p={x:AREA/2,y:AREA/2,course:Math.random()*360};
+    placed.push({x:p.x,y:p.y});
+    return p;
+  }
+
+  const m1=pickMerchant(["W","S"]);
+  const m2=pickMerchant(["E","N"]);
+  const fv=pickFishing();
+
+  contacts.push({type:"merchant",id:"MV",x:m1.x,y:m1.y,course:m1.course,speed:9+Math.random()*5,strength:1.0,visible:true,active:true,track:[]});
+  contacts.push({type:"merchant",id:"MV",x:m2.x,y:m2.y,course:m2.course,speed:9+Math.random()*5,strength:1.0,visible:true,active:true,track:[]});
+  contacts.push({type:"fishing",id:"FV",x:fv.x,y:fv.y,course:fv.course,speed:0.6+Math.random()*0.8,strength:0.65,visible:true,active:true,track:[]});
+}
+function newGame(){
+  running=false;won=false;document.getElementById("playBtn").textContent="Play / Pause";document.getElementById("winBox").style.display="none";document.getElementById("resultModal").style.display="none";const rm=document.getElementById("revealModal");if(rm)rm.style.display="none";torpedo=null;fired=false;const lb=document.getElementById("launchBtn");if(lb){lb.disabled=false;lb.classList.remove("launched");lb.textContent="Launch torpedoes";}
+  lastFrame=null;simTime=0;sampleAcc=0;noiseAcc=0;orderedCourse=45;orderedSpeed=10;selectedBearing=45;listeningQuality=0;practiceReveal=false;resetMPA();resetRevealUI();document.getElementById("speed").value=10;
+  own={x:3,y:3,course:45,speed:6};
+  ownTrack=[{x:own.x,y:own.y,t:0}];
+  contacts=[];
+  const sub=placeSub();
+  const reciprocal=bearing(sub,own);
+  const crossOffset=(Math.random()<0.5?-1:1)*(55+Math.random()*45);
+  contacts.push({type:"sub",id:"SSK",x:sub.x,y:sub.y,course:norm360(reciprocal+crossOffset),speed:10+Math.random()*2,strength:.34,visible:false,active:true,track:[]});
+  setupTraffic();
+  for(const c of contacts)c.track=[{x:c.x,y:c.y,t:0}];
+  samples=[];noise=[];activePings=[];preloadNoise();addSamples();drawAll();
+}
+function togglePlay(){if(won)return;running=!running;document.getElementById("playBtn").textContent=running?"Pause":"Play / Pause";lastFrame=null;requestAnimationFrame(loop)}
+
+function ownNoiseLevel(){
+  const s=own ? own.speed : 5;
+  if(s<=8)return .045;
+  if(s<=14)return .045+(s-8)*.027;
+  if(s<=18)return .22+(s-14)*.075;
+  if(s<=22)return .52+(s-18)*.085;
+  return .90;
+}
+function noiseState(){const n=ownNoiseLevel();if(n<.22)return"LOW";if(n<.50)return"MODERATE";if(n<.82)return"HIGH";return"WHITEOUT"}
+function updateListeningQuality(dt){
+  // A short settle time rewards sprint-and-drift: slow down, wait, and let the trace build.
+  if(!own)return;
+  if(own.speed<=7){
+    listeningQuality=clamp(listeningQuality+dt/28,0,1);
+  }else if(own.speed<=10){
+    listeningQuality=clamp(listeningQuality+dt/45,0,0.85);
+  }else if(own.speed<=14){
+    listeningQuality=clamp(listeningQuality-dt/24,0,1);
+  }else{
+    listeningQuality=clamp(listeningQuality-dt/9,0,1);
+  }
+}
+function intensityFor(c){
+  const r=dist(own,c), ownN=ownNoiseLevel();
+  let rangeFactor,speedFactor,sourceStrength;
+
+  if(c.type==="sub"){
+    // Quieter SSK model; weak until own ship slows and allows the trace to build.
+    if(r>10.5) return 0;
+
+    if(r>8.5) rangeFactor=0.003+((10.5-r)/2.0)*0.020;
+    else if(r>6.0) rangeFactor=0.023+((8.5-r)/2.5)*0.050;
+    else if(r>4.0) rangeFactor=0.073+((6.0-r)/2.0)*0.085;
+    else rangeFactor=0.158+clamp((4.0-r)/2.2,0,1)*0.14;
+
+    speedFactor=clamp(0.22+c.speed*0.030,0.24,0.56);
+    sourceStrength=0.34;
+
+    let signal=sourceStrength*rangeFactor*speedFactor;
+    signal*=Math.pow(listeningQuality,1.35);
+    signal=signal/(1+ownN*2.7);
+    if(ownN>.82) signal*=0.22;
+    return clamp(signal,0,0.42);
+  }else if(c.type==="merchant"){
+    // Greater variance; close, fast merchants become brighter and broader.
+    rangeFactor=clamp((19-r)/15.5,0.02,1.0);
+    speedFactor=clamp(0.48+c.speed*0.055,0.58,1.42);
+    sourceStrength=1.10;
+
+    let signal=sourceStrength*Math.pow(rangeFactor,0.80)*speedFactor;
+    signal=signal/(1+ownN*1.55);
+    if(ownN>.88) signal*=0.80;
+    return clamp(signal,0.03,1.0);
+  }else{
+    rangeFactor=clamp((13-r)/10.5,0.015,0.82);
+    speedFactor=clamp(0.36+c.speed*0.065,0.36,0.88);
+    sourceStrength=0.56;
+
+    let signal=sourceStrength*Math.pow(rangeFactor,0.92)*speedFactor;
+    signal=signal/(1+ownN*1.80);
+    return clamp(signal,0.02,0.58);
+  }
+}
+function preloadNoise(){const old=simTime;for(let t=-HIST;t<=0;t+=.5){simTime=t;addNoise(4)}simTime=old}
+function addNoise(n){
+  const ownN=ownNoiseLevel(), total=n+Math.round(ownN*9);
+  for(let i=0;i<total;i++){
+    const bright=Math.random()<ownN*.35;
+    noise.unshift({
+      b:-180+Math.random()*360,
+      t:simTime-Math.random()*.25,
+      a:(.014+Math.random()*.075)+(ownN*.09)+(bright?ownN*.16:0),
+      w:.55+Math.random()*(1.15+ownN*1.5),
+      h:.8+Math.random()*(4.2+ownN*8)
+    });
+  }
+  noise=noise.filter(x=>simTime-x.t<=HIST)
+}
+function addSamples(){
+  for(const c of contacts){
+    if(c.active===false) continue;
+    const b=signedBearing(bearing(own,c));
+    if(c.type==="sub")lastSubBearing=norm360(bearing(own,c));
+    const sig=intensityFor(c);
+    c.lastSig=sig;
+    if(sig>.003)samples.unshift({cid:c.id+"-"+contacts.indexOf(c),type:c.type,b:b,t:simTime,i:sig});
+  }
+  samples=samples.filter(s=>simTime-s.t<=HIST)
+}
+function addActivePing(source,type){
+  if(!source || !own) return;
+  const b=signedBearing(bearing(own,source));
+  activePings.unshift({
+    b:b,
+    t:simTime,
+    type:type,
+    width:type==="torpedo" ? 18 : 16,
+    alpha:type==="torpedo" ? 0.95 : 0.82
+  });
+  activePings=activePings.filter(p=>simTime-p.t<=HIST);
+}
+function updateActivePings(){
+  if(mpa && mpa.buoys){
+    for(const b of mpa.buoys){
+      if(b.lastPing===undefined){
+        b.lastPing=simTime;
+        addActivePing(b,"buoy");
+      }else if(simTime-b.lastPing>=30){
+        b.lastPing+=30;
+        addActivePing(b,"buoy");
+      }
+    }
+  }
+
+  if(torpedo){
+    if(torpedo.lastPing===undefined){
+      torpedo.lastPing=simTime;
+      addActivePing(torpedo,"torpedo");
+    }else if(simTime-torpedo.lastPing>=1){
+      torpedo.lastPing+=1;
+      addActivePing(torpedo,"torpedo");
+    }
+  }
+
+  activePings=activePings.filter(p=>simTime-p.t<=HIST);
+}
+function clean(){samples=samples.filter(s=>simTime-s.t<=HIST);noise=noise.filter(n=>simTime-n.t<=HIST);activePings=activePings.filter(p=>simTime-p.t<=HIST)}
+function vectorFromBearingDeg(brg,mag){
+  const u=unit(brg);
+  return {x:u.x*mag,y:u.y*mag};
+}
+function addAwayVector(sum,from,threat,weight){
+  const dx=from.x-threat.x, dy=from.y-threat.y;
+  const d=Math.hypot(dx,dy);
+  if(d<0.001) return;
+  sum.x += (dx/d)*weight;
+  sum.y += (dy/d)*weight;
+}
+function updateSubmarineTactics(dt){
+  const sub=contacts.find(c=>c.type==="sub");
+  if(!sub || sub.active===false) return;
+
+  if(sub.normalSpeed===undefined) sub.normalSpeed=clamp(sub.speed,9.5,12);
+  let desiredSpeed=sub.normalSpeed;
+  let vector=vectorFromBearingDeg(sub.course,0.55);
+
+  // Avoid active sonar buoy fields. If already pinged, prioritise breaking contact.
+  if(mpa && mpa.buoys){
+    for(const b of mpa.buoys){
+      const d=dist(sub,b);
+      if(d<BUOY_DETECT_KM){
+        addAwayVector(vector,sub,b,4.2);
+        desiredSpeed=Math.max(desiredSpeed,14.5);
+      }else if(d<BUOY_DETECT_KM+2.2){
+        addAwayVector(vector,sub,b,2.2*(1-(d-BUOY_DETECT_KM)/2.2));
+        desiredSpeed=Math.max(desiredSpeed,12.5);
+      }else if(d<BUOY_DETECT_KM+4.0){
+        addAwayVector(vector,sub,b,0.8*(1-(d-(BUOY_DETECT_KM+2.2))/1.8));
+      }
+    }
+  }
+
+  // React to a noisy own ship approaching nearby. It does not react strongly to a quiet, distant ship.
+  const ownRange=dist(sub,own);
+  const shipNoise=ownNoiseLevel();
+  if(ownRange<7.5 && shipNoise>0.18){
+    const weight=clamp((7.5-ownRange)/5.5,0,1)*clamp((shipNoise-0.18)/0.65,0,1)*2.4;
+    addAwayVector(vector,sub,own,weight);
+    if(ownRange<4.5 && shipNoise>0.35) desiredSpeed=Math.max(desiredSpeed,13.2);
+  }
+
+  // Steer gradually towards the evasion vector.
+  if(Math.hypot(vector.x,vector.y)>0.05){
+    const desiredCourse=norm360(Math.atan2(vector.x,vector.y)*180/Math.PI);
+    const maxTurn=2.0*dt;
+    const turn=clamp(angleDiff(desiredCourse,sub.course),-maxTurn,maxTurn);
+    sub.course=norm360(sub.course+turn);
+  }
+
+  // Speed response is intentionally slower than surface-ship orders.
+  const accel=0.35*dt;
+  sub.speed=clamp(sub.speed+clamp(desiredSpeed-sub.speed,-accel,accel),8.5,15.5);
+}
+function advanceContact(c,dt){
+  if(c.active===false) return;
+  const u=unit(c.course);
+  c.x+=u.x*kmPerSec(c.speed)*dt;c.y+=u.y*kmPerSec(c.speed)*dt;
+
+  if(c.type==="merchant"){
+    if(c.x<=0||c.x>=AREA||c.y<=0||c.y>=AREA){
+      c.active=false;
+      c.x=clamp(c.x,0,AREA);
+      c.y=clamp(c.y,0,AREA);
+    }
+  }else if(c.type==="fishing"){
+    if(c.x<2||c.x>AREA-2)c.course=360-c.course;
+    if(c.y<2||c.y>AREA-2)c.course=180-c.course;
+    c.x=clamp(c.x,2,AREA-2);c.y=clamp(c.y,2,AREA-2);
+  }else{
+    if(c.x<1||c.x>AREA-1)c.course=360-c.course;
+    if(c.y<1||c.y>AREA-1)c.course=180-c.course;
+    c.x=clamp(c.x,1,AREA-1);c.y=clamp(c.y,1,AREA-1);
+  }
+
+  c.course=norm360(c.course);
+  c.track.push({x:c.x,y:c.y,t:simTime});
+  c.track=c.track.filter(p=>simTime-p.t<=900);
+}
+function update(dt){
+  const timeScale=parseFloat(document.getElementById("timeScale")?.value||"1");
+  dt*=timeScale;
+  simTime+=dt;
+
+  orderedSpeed=parseFloat(document.getElementById("speed").value);
+  const maxTurnRate=3.0; // deg/sec
+  const maxAccel=1.2; // kt/sec
+  const turn=clamp(angleDiff(orderedCourse,own.course),-maxTurnRate*dt,maxTurnRate*dt);
+  own.course=norm360(own.course+turn);
+  const spdDelta=clamp(orderedSpeed-own.speed,-maxAccel*dt,maxAccel*dt);
+  own.speed=clamp(own.speed+spdDelta,0,25);
+  updateListeningQuality(dt);
+
+  const u=unit(own.course);
+  own.x=clamp(own.x+u.x*kmPerSec(own.speed)*dt,0,AREA);
+  own.y=clamp(own.y+u.y*kmPerSec(own.speed)*dt,0,AREA);
+  ownTrack.push({x:own.x,y:own.y,t:simTime});ownTrack=ownTrack.filter(p=>simTime-p.t<=900);
+  updateSubmarineTactics(dt);
+  for(const c of contacts)advanceContact(c,dt);
+
+  sampleAcc+=dt;while(sampleAcc>=.25){sampleAcc-=.25;addSamples()}
+  noiseAcc+=dt;while(noiseAcc>=.18){noiseAcc-=.18;addNoise(3)}
+
+  updateTorpedo(dt);
+  updateMPA(dt);
+  updateActivePings();
+  clean()
+}
+function toCanvas(p,size){const m=26,s=Math.min((size.w-2*m)/AREA,(size.h-2*m)/AREA),ox=m+((size.w-2*m)-AREA*s)/2,oy=m+AREA*s+((size.h-2*m)-AREA*s)/2;return{x:ox+p.x*s,y:oy-p.y*s,scale:s,ox:ox,oy:oy}}
+function moveArrow(ctx,c,course,len){
+  const a=rad(course);
+  const tip={x:c.x+Math.sin(a)*len,y:c.y-Math.cos(a)*len};
+  const ang=Math.atan2(tip.y-c.y,tip.x-c.x);
+  const shaftEnd={x:tip.x-9*Math.cos(ang),y:tip.y-9*Math.sin(ang)};
+  ctx.strokeStyle="#f2f6f9";ctx.fillStyle="#f2f6f9";ctx.lineWidth=2;ctx.lineCap="round";
+  ctx.beginPath();ctx.moveTo(c.x,c.y);ctx.lineTo(shaftEnd.x,shaftEnd.y);ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(tip.x,tip.y);
+  ctx.lineTo(tip.x-10*Math.cos(ang-Math.PI/7),tip.y-10*Math.sin(ang-Math.PI/7));
+  ctx.lineTo(tip.x-10*Math.cos(ang+Math.PI/7),tip.y-10*Math.sin(ang+Math.PI/7));
+  ctx.closePath();ctx.fill();
+  ctx.lineCap="butt";
+}
+function vectorLen(speed){return Math.max(18,Math.min(62,14+speed*2.1))}
+function drawOwn(ctx,p,size){const c=toCanvas(p,size);ctx.save();moveArrow(ctx,c,own.course,vectorLen(own.speed));ctx.fillStyle="#4db7ff";ctx.strokeStyle="#b9e8ff";ctx.lineWidth=1.7;ctx.beginPath();ctx.arc(c.x,c.y,13,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.fillStyle="#061019";ctx.font="bold 10px Arial";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("FF",c.x,c.y);ctx.restore()}
+function drawMerchant(ctx,cnt,size){const c=toCanvas(cnt,size);ctx.save();moveArrow(ctx,c,cnt.course,vectorLen(cnt.speed));ctx.fillStyle="#49ff6a";ctx.strokeStyle="#caffd2";ctx.lineWidth=1.7;ctx.fillRect(c.x-10,c.y-10,20,20);ctx.strokeRect(c.x-10,c.y-10,20,20);ctx.fillStyle="#061019";ctx.font="bold 9px Arial";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("MV",c.x,c.y);ctx.restore()}
+function drawFishing(ctx,cnt,size){const c=toCanvas(cnt,size);ctx.save();moveArrow(ctx,c,cnt.course,22);ctx.fillStyle="#49ff6a";ctx.strokeStyle="#caffd2";ctx.lineWidth=1.7;ctx.fillRect(c.x-10,c.y-10,20,20);ctx.strokeRect(c.x-10,c.y-10,20,20);ctx.fillStyle="#061019";ctx.font="bold 9px Arial";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("FV",c.x,c.y);ctx.restore()}
+function drawSSK(ctx,cnt,size){const c=toCanvas(cnt,size);ctx.save();moveArrow(ctx,c,cnt.course,vectorLen(cnt.speed));ctx.fillStyle="#ff5f5f";ctx.strokeStyle="#ffd4d4";ctx.lineWidth=1.7;ctx.beginPath();ctx.moveTo(c.x,c.y-13);ctx.lineTo(c.x+13,c.y);ctx.lineTo(c.x,c.y+13);ctx.lineTo(c.x-13,c.y);ctx.closePath();ctx.fill();ctx.stroke();ctx.fillStyle="#061019";ctx.font="bold 8px Arial";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("SSK",c.x,c.y);ctx.restore()}
+function drawTrack(ctx,track,size,col,width=1.4,alpha=1){
+  if(track.length<2) return;
+  ctx.save();
+  ctx.strokeStyle=col;
+  ctx.globalAlpha=alpha;
+  ctx.lineWidth=width;
+  ctx.lineCap="round";
+  ctx.lineJoin="round";
+  ctx.beginPath();
+  track.forEach((p,i)=>{
+    const q=toCanvas(p,size);
+    if(i===0) ctx.moveTo(q.x,q.y);
+    else ctx.lineTo(q.x,q.y);
+  });
+  ctx.stroke();
+  ctx.restore();
+}
+
+function resetRevealUI(){
+  const btn=document.getElementById("revealBtn");
+  const txt=document.getElementById("revealText");
+  if(btn){
+    btn.disabled=false;
+    btn.classList.remove("active");
+    btn.textContent="Reveal submarine position";
+  }
+  if(txt) txt.textContent="Training aid. Revealing the SSK disables the time score.";
+}
+function confirmRevealSubmarine(){
+  if(practiceReveal) return;
+  const modal=document.getElementById("revealModal");
+  if(modal) modal.style.display="flex";
+}
+function cancelRevealSubmarine(){
+  const modal=document.getElementById("revealModal");
+  if(modal) modal.style.display="none";
+}
+function applyRevealSubmarine(){
+  const modal=document.getElementById("revealModal");
+  if(modal) modal.style.display="none";
+
+  practiceReveal=true;
+  const btn=document.getElementById("revealBtn");
+  const txt=document.getElementById("revealText");
+  if(btn){
+    btn.disabled=true;
+    btn.classList.add("active");
+    btn.textContent="SSK revealed";
+  }
+  if(txt) txt.textContent="Training reveal active. No time score will be awarded.";
+  drawAll();
+}
+function resetMPA(){
+  mpa={
+    state:"ready",
+    used:false,
+    placements:[],
+    buoys:[],
+    eta:0,
+    aircraft:null
+  };
+  const btn=document.getElementById("mpaBtn");
+  if(btn){btn.disabled=false;btn.textContent="Task MPA";}
+  updateMPAUI();
+}
+function taskMPA(){
+  if(!mpa || mpa.state!=="ready") return;
+  mpa.state="selecting";
+  mpa.used=true;
+  mpa.placements=[];
+  mpa.buoys=[];
+  const btn=document.getElementById("mpaBtn");
+  if(btn){btn.disabled=true;btn.textContent="MPA tasked";}
+  updateMPAUI();
+  drawAll();
+}
+function updateMPAUI(){
+  const el=document.getElementById("mpaStatus");
+  if(!el || !mpa) return;
+
+  if(mpa.state==="ready"){
+    el.textContent="Ready. Task once only.";
+  }else if(mpa.state==="selecting"){
+    el.textContent="Select buoy locations on the tactical plot: "+mpa.placements.length+"/5 selected.";
+  }else if(mpa.state==="enroute"){
+    const mins=Math.floor(Math.max(0,mpa.eta)/60);
+    const secs=Math.floor(Math.max(0,mpa.eta)%60).toString().padStart(2,"0");
+    el.innerHTML="MPA en route.<span class='mpaEta'>ETA "+mins+":"+secs+"</span>";
+  }else if(mpa.state==="deploying"){
+    if(mpa.aircraft && mpa.aircraft.wp>=mpa.placements.length){
+      el.textContent="MPA returning to base.";
+    }else{
+      el.textContent="MPA on station. Deploying active sonar buoys: "+mpa.buoys.length+"/5.";
+    }
+  }else if(mpa.state==="complete"){
+    const detections=mpa.buoys.filter(b=>b.detecting).length;
+    el.textContent=detections>0 ? "Active buoy field detecting SSK." : "MPA returned to base. Active buoy field deployed.";
+  }
+}
+function scheduleMPA(){
+  mpa.state="enroute";
+  mpa.eta=120+Math.random()*240; // 2-6 minutes simulated time
+  updateMPAUI();
+}
+function pointFromPlotPointer(e){
+  const rect=plotCanvas.getBoundingClientRect();
+  const x=e.clientX-rect.left;
+  const y=e.clientY-rect.top;
+  const m=26;
+  const s=Math.min((rect.width-2*m)/AREA,(rect.height-2*m)/AREA);
+  const ox=m+((rect.width-2*m)-AREA*s)/2;
+  const oy=m+AREA*s+((rect.height-2*m)-AREA*s)/2;
+  const wx=(x-ox)/s;
+  const wy=(oy-y)/s;
+  if(wx<0||wx>AREA||wy<0||wy>AREA) return null;
+  return {x:wx,y:wy};
+}
+function handlePlotPointer(e){
+  if(!mpa || mpa.state!=="selecting") return;
+  const p=pointFromPlotPointer(e);
+  if(!p) return;
+  e.preventDefault();
+  mpa.placements.push(p);
+  if(mpa.placements.length>=5) scheduleMPA();
+  else updateMPAUI();
+  drawAll();
+}
+function nearestEdgePoint(p,outside){
+  const opts=[
+    {x:outside?-1:0,y:p.y,d:p.x},
+    {x:outside?AREA+1:AREA,y:p.y,d:AREA-p.x},
+    {x:p.x,y:outside?-1:0,d:p.y},
+    {x:p.x,y:outside?AREA+1:AREA,d:AREA-p.y}
+  ];
+  opts.sort((a,b)=>a.d-b.d);
+  return {x:opts[0].x,y:opts[0].y};
+}
+function startMPADeployment(){
+  if(!mpa || mpa.placements.length<5) return;
+  const first=mpa.placements[0];
+  const last=mpa.placements[mpa.placements.length-1];
+  const entry=nearestEdgePoint(first,true);
+  const exit=nearestEdgePoint(last,true);
+  mpa.aircraft={x:entry.x,y:entry.y,wp:0,exit:exit,speed:360};
+  mpa.state="deploying";
+  updateMPAUI();
+}
+function updateMPA(dt){
+  if(!mpa) return;
+
+  const sub=contacts.find(c=>c.type==="sub");
+  if(sub){
+    for(const b of mpa.buoys){
+      b.detecting=dist(b,sub)<=BUOY_DETECT_KM;
+    }
+  }
+
+  if(mpa.state==="enroute"){
+    mpa.eta-=dt;
+    if(mpa.eta<=0) startMPADeployment();
+  }else if(mpa.state==="deploying" && mpa.aircraft){
+    const ac=mpa.aircraft;
+    const target=ac.wp<mpa.placements.length ? mpa.placements[ac.wp] : ac.exit;
+    const dx=target.x-ac.x, dy=target.y-ac.y;
+    const d=Math.hypot(dx,dy);
+    const step=kmPerSec(ac.speed)*dt;
+
+    if(d<=step || d<0.05){
+      ac.x=target.x; ac.y=target.y;
+      if(ac.wp<mpa.placements.length){
+        const newBuoy={x:target.x,y:target.y,detecting:false,lastPing:undefined};
+        mpa.buoys.push(newBuoy);
+        addActivePing(newBuoy,"buoy");
+        newBuoy.lastPing=simTime;
+        ac.wp++;
+      }else{
+        mpa.aircraft=null;
+        mpa.state="complete";
+      }
+    }else{
+      ac.x += (dx/d)*step;
+      ac.y += (dy/d)*step;
+    }
+  }
+
+  updateMPAUI();
+}
+function drawPlannedBuoy(ctx,p,i,size){
+  const c=toCanvas(p,size);
+  ctx.save();
+  ctx.strokeStyle="#8ea0ae";
+  ctx.fillStyle="rgba(142,160,174,.08)";
+  ctx.lineWidth=1.5;
+  ctx.setLineDash([4,4]);
+  ctx.beginPath();ctx.arc(c.x,c.y,9,0,Math.PI*2);ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle="#8ea0ae";
+  ctx.font="bold 9px Arial";
+  ctx.textAlign="center";
+  ctx.textBaseline="middle";
+  ctx.fillText(String(i+1),c.x,c.y);
+  ctx.restore();
+}
+function drawActiveBuoy(ctx,b,size){
+  const c=toCanvas(b,size);
+  ctx.save();
+
+  if(b.detecting){
+    ctx.strokeStyle="#ff5f5f";
+    ctx.lineWidth=2.5;
+    ctx.beginPath();ctx.arc(c.x,c.y,17,0,Math.PI*2);ctx.stroke();
+  }
+
+  ctx.fillStyle="#4db7ff";
+  ctx.strokeStyle="#b9e8ff";
+  ctx.lineWidth=1.8;
+  ctx.beginPath();ctx.arc(c.x,c.y,8,0,Math.PI*2);ctx.fill();ctx.stroke();
+
+  ctx.fillStyle="#061019";
+  ctx.font="bold 8px Arial";
+  ctx.textAlign="center";
+  ctx.textBaseline="middle";
+  ctx.fillText("A",c.x,c.y);
+  ctx.restore();
+}
+function drawMPA(ctx,ac,size){
+  const c=toCanvas(ac,size);
+  ctx.save();
+  const w=34,h=30;
+  const x=c.x-w/2,y=c.y-h/2+2;
+
+  ctx.beginPath();
+  ctx.moveTo(x,y+h);
+  ctx.lineTo(x,y+12);
+  ctx.quadraticCurveTo(x+w*0.08,y,x+w*0.26,y);
+  ctx.quadraticCurveTo(x+w*0.5,y-4,x+w*0.74,y);
+  ctx.quadraticCurveTo(x+w*0.92,y,x+w,y+12);
+  ctx.lineTo(x+w,y+h);
+  ctx.closePath();
+
+  ctx.fillStyle="#8ec7e2";
+  ctx.strokeStyle="#111";
+  ctx.lineWidth=2;
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle="#111";
+  ctx.font="bold 9px Arial";
+  ctx.textAlign="center";
+  ctx.textBaseline="middle";
+  ctx.fillText("MPA", c.x, y+h*0.58);
+  ctx.restore();
+}
+function drawSelectedBearingLine(ctx,size){
+  if(!own) return;
+  const o=toCanvas(own,size);
+  const a=rad(selectedBearing);
+  const dx=Math.sin(a), dy=Math.cos(a); // world north-up vector
+  const candidates=[];
+
+  if(Math.abs(dx)>0.0001){
+    let t=(0-own.x)/dx; if(t>0)candidates.push(t);
+    t=(AREA-own.x)/dx; if(t>0)candidates.push(t);
+  }
+  if(Math.abs(dy)>0.0001){
+    let t=(0-own.y)/dy; if(t>0)candidates.push(t);
+    t=(AREA-own.y)/dy; if(t>0)candidates.push(t);
+  }
+
+  if(!candidates.length) return;
+  const t=Math.min(...candidates);
+  const endWorld={x:own.x+dx*t,y:own.y+dy*t};
+  const e=toCanvas(endWorld,size);
+
+  ctx.save();
+  ctx.strokeStyle="#ffd166";
+  ctx.lineWidth=2;
+  ctx.setLineDash([7,5]);
+  ctx.beginPath();
+  ctx.moveTo(o.x,o.y);
+  ctx.lineTo(e.x,e.y);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+}
+function drawPlot(){
+  const size=resize(plotCanvas),ctx=plotCtx;ctx.clearRect(0,0,size.w,size.h);ctx.fillStyle="#071018";ctx.fillRect(0,0,size.w,size.h);
+  const m=26,s=Math.min((size.w-2*m)/AREA,(size.h-2*m)/AREA),ox=m+((size.w-2*m)-AREA*s)/2,oy=m+AREA*s+((size.h-2*m)-AREA*s)/2;
+  ctx.strokeStyle="#1b2b38";ctx.lineWidth=1;for(let i=0;i<=AREA;i+=5){let x=ox+i*s;ctx.beginPath();ctx.moveTo(x,oy-AREA*s);ctx.lineTo(x,oy);ctx.stroke();let y=oy-i*s;ctx.beginPath();ctx.moveTo(ox,y);ctx.lineTo(ox+AREA*s,y);ctx.stroke()}
+  ctx.strokeStyle="#314656";ctx.lineWidth=2;ctx.strokeRect(ox,oy-AREA*s,AREA*s,AREA*s);
+  ctx.strokeStyle="#d9e6ef";ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(ox+10,oy+18);ctx.lineTo(ox+10+5*s,oy+18);ctx.stroke();ctx.fillStyle="#d9e6ef";ctx.font="bold 11px Arial";ctx.fillText("Scale 5 km",ox+10,oy+35);
+
+  drawTrack(ctx,ownTrack,size,"#4db7ff");
+  for(const c of contacts){
+    if(!c.visible) continue;
+    const sig=c.lastSig||0;
+    const width=c.type==="merchant" ? (sig>0.70 ? 2.6 : sig>0.38 ? 1.9 : 1.2) : (c.type==="fishing" ? (sig>0.28 ? 1.5 : 1.1) : 1.0);
+    const alpha=c.type==="merchant" ? Math.max(0.10,Math.min(1,sig)) : Math.max(0.10,Math.min(0.7,sig*1.25));
+    drawTrack(ctx,c.track,size,"#49ff6a",width,alpha);
+  }
+
+  if(mpa){
+    if(mpa.state==="selecting"||mpa.state==="enroute"){
+      for(let i=0;i<mpa.placements.length;i++) drawPlannedBuoy(ctx,mpa.placements[i],i,size);
+    }
+    for(const b of mpa.buoys) drawActiveBuoy(ctx,b,size);
+  }
+
+  drawSelectedBearingLine(ctx,size);
+
+  for(const c of contacts){if(c.visible&&c.active!==false){c.type==="merchant"?drawMerchant(ctx,c,size):drawFishing(ctx,c,size)}}
+  if(won||practiceReveal){const sub=contacts.find(c=>c.type==="sub");if(sub)drawSSK(ctx,sub,size)}
+  if(torpedo) drawTorpedo(ctx,torpedo,size);
+  if(mpa&&mpa.aircraft) drawMPA(ctx,mpa.aircraft,size);
+  drawOwn(ctx,own,size);
+
+  ctx.fillStyle="#8fa0ae";ctx.font="12px Arial";ctx.fillText("N",size.w-28,20);ctx.strokeStyle="#8fa0ae";ctx.beginPath();ctx.moveTo(size.w-24,44);ctx.lineTo(size.w-24,24);ctx.stroke()
+}
+
+function drawTracePath(ctx,pts,width){if(pts.length<2)return;ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);for(let i=1;i<pts.length;i++){let p=pts[i],pr=pts[i-1];if(Math.abs(p.x-pr.x)>width*.45){ctx.stroke();ctx.beginPath();ctx.moveTo(p.x,p.y)}else ctx.lineTo(p.x,p.y)}ctx.stroke()}
+function drawWaterfall(){
+  const size=resize(waterfallCanvas),ctx=wfCtx;ctx.clearRect(0,0,size.w,size.h);ctx.fillStyle="#05070a";ctx.fillRect(0,0,size.w,size.h);
+  const left=38,right=size.w-20,top=22,bottom=size.h-24,centre=(left+right)/2,sc=(right-left)/360;
+  ctx.fillStyle="rgba(5,7,10,.18)";
+  ctx.fillRect(left,top,right-left,bottom-top);
+  for(const n of noise){const age=simTime-n.t;if(age<0||age>HIST)continue;ctx.fillStyle="rgba(73,255,106,"+n.a.toFixed(3)+")";ctx.fillRect(centre+n.b*sc,top+(age/HIST)*(bottom-top),n.w,n.h)}
+
+  // Active transmissions visible on passive waterfall.
+  // Buoys ping every 30 seconds; torpedo pings much more rapidly after launch.
+  for(const p of activePings){
+    const age=simTime-p.t;
+    if(age<0||age>HIST) continue;
+    const y=top+(age/HIST)*(bottom-top);
+    const x=centre+p.b*sc;
+    const half=(p.width*sc)/2;
+    const fade=clamp(1-age/75,0.18,1);
+    const alpha=p.alpha*fade;
+    ctx.save();
+    ctx.strokeStyle="rgba(255,209,102,"+alpha.toFixed(3)+")";
+    ctx.lineWidth=p.type==="torpedo" ? 3.2 : 2.4;
+    ctx.shadowColor="#ffd166";
+    ctx.shadowBlur=p.type==="torpedo" ? 11 : 7;
+    ctx.beginPath();
+    ctx.moveTo(x-half,y);
+    ctx.lineTo(x+half,y);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  const ownN=ownNoiseLevel();
+
+  ctx.strokeStyle="#1d2b36";ctx.lineWidth=1;for(let rb=-180;rb<=180;rb+=30){const x=centre+rb*sc;ctx.beginPath();ctx.moveTo(x,top);ctx.lineTo(x,bottom);ctx.stroke()}
+  ctx.strokeStyle="#10202c";for(let mm=1;mm<5;mm++){let y=top+(mm*60/HIST)*(bottom-top);ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(right,y);ctx.stroke()}
+  ctx.strokeStyle="#5d6875";ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(centre,top);ctx.lineTo(centre,bottom);ctx.stroke();
+
+  const ownX=centre+signedBearing(norm360(own.course))*sc;ctx.strokeStyle="#57b8ff";ctx.lineWidth=2.2;ctx.beginPath();ctx.moveTo(ownX,top);ctx.lineTo(ownX,bottom);ctx.stroke();
+
+  const selX=centre+signedBearing(norm360(selectedBearing))*sc;
+  ctx.strokeStyle="#ffd166";
+  ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(selX,top);ctx.lineTo(selX,bottom);ctx.stroke();
+
+  const groups={};
+  for(const s of samples){
+    const age=simTime-s.t;
+    if(age<0||age>HIST)continue;
+    if(!groups[s.cid])groups[s.cid]={type:s.type,pts:[]};
+    groups[s.cid].pts.push({x:centre+s.b*sc,y:top+(age/HIST)*(bottom-top),i:s.i});
+  }
+
+  function drawContactTrace(group){
+    const type=group.type;
+    const pts=group.pts.sort((a,b)=>a.y-b.y);
+    if(pts.length<2)return;
+    const avg=pts.reduce((a,p)=>a+p.i,0)/pts.length;
+    const visibility=1;
+
+    // Close contacts now mask a broader bearing sector, without becoming luminous.
+    // The waterfall area is clipped, and line caps are squared so traces do not bulge
+    // past the top of the display.
+    const bearingScale=(right-left)/360;
+    const merchantCoreDeg=1.2 + Math.pow(avg,1.18)*7.0;
+    const fishingCoreDeg=0.9 + Math.pow(avg,1.12)*2.8;
+    const subCoreDeg=0.75 + Math.pow(avg,1.25)*1.0;
+
+    const coreWidth = type==="merchant" ? merchantCoreDeg*bearingScale :
+                      type==="fishing" ? fishingCoreDeg*bearingScale :
+                      subCoreDeg*bearingScale;
+
+    const maskWidth = type==="merchant" ? coreWidth + (avg*3.2) :
+                      type==="fishing" ? coreWidth + (avg*1.8) :
+                      coreWidth;
+
+    const glowWidth = type==="merchant" ? coreWidth + (0.8 + avg*1.7) :
+                      type==="fishing" ? coreWidth + (1.1 + avg*1.8) :
+                      coreWidth + (0.9 + avg*1.2);
+
+    let glowColour, coreColour, glowAlpha, coreAlpha, shadowBlur;
+
+    if(type==="merchant"){
+      glowColour="rgba(24,82,32,A)";
+      coreColour="rgba(45,128,55,A)";
+      glowAlpha=(0.035 + avg*0.13)*visibility;
+      coreAlpha=(0.13 + avg*0.34)*visibility;
+      shadowBlur=0.8 + avg*1.8;
+    }else if(type==="fishing"){
+      glowColour="rgba(45,135,60,A)";
+      coreColour="rgba(76,185,90,A)";
+      glowAlpha=(0.035 + avg*0.16)*visibility;
+      coreAlpha=(0.12 + avg*0.42)*visibility;
+      shadowBlur=1.3 + avg*2.8;
+    }else{
+      glowColour="rgba(46,155,65,A)";
+      coreColour="rgba(72,215,92,A)";
+      glowAlpha=(0.018 + avg*0.11)*visibility;
+      coreAlpha=(0.050 + avg*0.34)*visibility;
+      shadowBlur=1.4 + avg*3.0;
+    }
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(left,top,right-left,bottom-top);
+    ctx.clip();
+
+    // A dark translucent mask represents the bearing space being covered by close contact noise.
+    if(type==="merchant" && avg>0.18){
+      ctx.save();
+      ctx.globalCompositeOperation="source-over";
+      ctx.strokeStyle="rgba(10,45,18,"+(0.10+avg*0.20).toFixed(2)+")";
+      ctx.lineWidth=maskWidth;
+      ctx.lineCap="butt";
+      ctx.lineJoin="round";
+      drawTracePath(ctx,pts,right-left);
+      ctx.restore();
+    }
+
+    ctx.save();
+    ctx.strokeStyle=glowColour.replace("A",glowAlpha.toFixed(2));
+    ctx.lineWidth=glowWidth;
+    ctx.lineCap="butt";
+    ctx.lineJoin="round";
+    ctx.shadowColor=type==="merchant"?"#17421d":"#1bff5b";
+    ctx.shadowBlur=shadowBlur;
+    drawTracePath(ctx,pts,right-left);
+    ctx.restore();
+
+    ctx.save();
+    ctx.strokeStyle=coreColour.replace("A",coreAlpha.toFixed(2));
+    ctx.lineWidth=coreWidth;
+    ctx.lineCap="butt";
+    ctx.lineJoin="round";
+    drawTracePath(ctx,pts,right-left);
+    ctx.restore();
+
+    ctx.restore();
+  }
+
+  Object.values(groups).forEach(drawContactTrace);
+
+  ctx.fillStyle="#aeb9c5";ctx.font="bold 12px Arial";ctx.fillText("180",left,15);ctx.fillText("090",centre+90*sc-12,15);ctx.fillText("000",centre-12,15);ctx.fillText("270",centre-90*sc-12,15);ctx.fillText("180",right-24,15);ctx.fillStyle="#57b8ff";ctx.fillText("OC",ownX+5,top+14);ctx.fillStyle="#8fa0ae";ctx.font="12px Arial";ctx.fillText("NOW",right-38,top+14);ctx.fillText("5 MIN",right-48,bottom-4);ctx.fillText("OWN NOISE: "+noiseState(),left+5,bottom-4)
+}
+
+function drawCompass(){
+  const size=resize(compassCanvas),ctx=compassCtx;
+  ctx.clearRect(0,0,size.w,size.h);
+  ctx.fillStyle="#08111a";ctx.fillRect(0,0,size.w,size.h);
+
+  const cx=size.w/2,cy=size.h/2,r=Math.min(size.w,size.h)*.37;
+
+  // Outer compass
+  ctx.strokeStyle="#314656";ctx.lineWidth=2;
+  ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.stroke();
+
+  // Tick marks and cardinal labels
+  ctx.fillStyle="#8ea0ae";ctx.font="bold 12px Arial";ctx.textAlign="center";ctx.textBaseline="middle";
+  [["000",0],["090",90],["180",180],["270",270]].forEach(([lab,b])=>{
+    const a=rad(b);
+    ctx.fillText(lab,cx+Math.sin(a)*(r+18),cy-Math.cos(a)*(r+18));
+  });
+
+  for(let b=0;b<360;b+=10){
+    const a=rad(b),r1=r-(b%30===0?10:5),r2=r;
+    ctx.strokeStyle=b%90===0?"#6f879a":"#40566a";
+    ctx.lineWidth=b%90===0?2:1;
+    ctx.beginPath();
+    ctx.moveTo(cx+Math.sin(a)*r1,cy-Math.cos(a)*r1);
+    ctx.lineTo(cx+Math.sin(a)*r2,cy-Math.cos(a)*r2);
+    ctx.stroke();
+  }
+
+  // Actual course, blue and slightly shorter.
+  if(own){
+    const ca=rad(own.course);
+    ctx.strokeStyle="#4db7ff";ctx.lineWidth=3;
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.lineTo(cx+Math.sin(ca)*(r-26),cy-Math.cos(ca)*(r-26));
+    ctx.stroke();
+  }
+
+  // Ordered course, white, with a clean arrow head.
+  const oa=rad(orderedCourse);
+  const end={x:cx+Math.sin(oa)*(r-10),y:cy-Math.cos(oa)*(r-10)};
+  const ang=Math.atan2(end.y-cy,end.x-cx);
+  const shaftEnd={x:end.x-12*Math.cos(ang),y:end.y-12*Math.sin(ang)};
+  ctx.strokeStyle="#f2f6f9";ctx.fillStyle="#f2f6f9";ctx.lineWidth=3;ctx.lineCap="round";
+  ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(shaftEnd.x,shaftEnd.y);ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(end.x,end.y);
+  ctx.lineTo(end.x-12*Math.cos(ang-Math.PI/7),end.y-12*Math.sin(ang-Math.PI/7));
+  ctx.lineTo(end.x-12*Math.cos(ang+Math.PI/7),end.y-12*Math.sin(ang+Math.PI/7));
+  ctx.closePath();ctx.fill();
+  ctx.lineCap="butt";
+
+  // Centre hub, no text in the middle.
+  ctx.fillStyle="#08111a";ctx.strokeStyle="#8ea0ae";ctx.lineWidth=2;
+  ctx.beginPath();ctx.arc(cx,cy,6,0,Math.PI*2);ctx.fill();ctx.stroke();
+
+  // Legend
+  ctx.font="11px Arial";ctx.textAlign="left";ctx.textBaseline="alphabetic";
+  ctx.fillStyle="#f2f6f9";ctx.fillText("white: ordered",10,size.h-24);
+  ctx.fillStyle="#4db7ff";ctx.fillText("blue: actual",10,size.h-9);
+}
+function setCourseFromPointer(e){
+  const rect=compassCanvas.getBoundingClientRect();
+  const x=(e.clientX||e.touches?.[0]?.clientX)-rect.left;
+  const y=(e.clientY||e.touches?.[0]?.clientY)-rect.top;
+  const cx=rect.width/2,cy=rect.height/2;
+  orderedCourse=norm360(Math.atan2(x-cx,cy-y)*180/Math.PI);
+  drawAll();
+}
+function compassPointerIsOnRing(e){
+  const rect=compassCanvas.getBoundingClientRect();
+  const x=(e.clientX||e.touches?.[0]?.clientX)-rect.left;
+  const y=(e.clientY||e.touches?.[0]?.clientY)-rect.top;
+  const cx=rect.width/2,cy=rect.height/2;
+  const r=Math.min(rect.width,rect.height)*.37;
+  const d=Math.hypot(x-cx,y-cy);
+  return Math.abs(d-r) <= 28;
+}
+compassCanvas.addEventListener("pointerdown",e=>{
+  if(!compassPointerIsOnRing(e)) return;
+  draggingCompass=true;
+  compassCanvas.setPointerCapture(e.pointerId);
+  setCourseFromPointer(e);
+});
+compassCanvas.addEventListener("pointermove",e=>{if(draggingCompass)setCourseFromPointer(e)});
+compassCanvas.addEventListener("pointerup",e=>{draggingCompass=false});
+compassCanvas.addEventListener("pointercancel",e=>{draggingCompass=false});
+function setBearingFromWaterfallPointer(e){
+  const rect=waterfallCanvas.getBoundingClientRect();
+  const x=(e.clientX||e.touches?.[0]?.clientX)-rect.left;
+  const left=38,right=rect.width-20,centre=(left+right)/2,scale=(right-left)/360;
+  const signed=(x-centre)/scale;
+  selectedBearing=norm360(signed);
+  drawAll();
+}
+function waterfallPointerNearBearingLine(e){
+  const rect=waterfallCanvas.getBoundingClientRect();
+  const x=(e.clientX||e.touches?.[0]?.clientX)-rect.left;
+  const left=38,right=rect.width-20,centre=(left+right)/2,scale=(right-left)/360;
+  const selX=centre+signedBearing(norm360(selectedBearing))*scale;
+  return Math.abs(x-selX) <= 18;
+}
+let draggingBearing=false;
+waterfallCanvas.addEventListener("pointerdown",e=>{
+  if(!waterfallPointerNearBearingLine(e)) return;
+  e.preventDefault();
+  draggingBearing=true;
+  waterfallCanvas.setPointerCapture(e.pointerId);
+  setBearingFromWaterfallPointer(e);
+});
+waterfallCanvas.addEventListener("pointermove",e=>{
+  if(!draggingBearing) return;
+  e.preventDefault();
+  setBearingFromWaterfallPointer(e);
+});
+waterfallCanvas.addEventListener("pointerup",e=>{draggingBearing=false});
+waterfallCanvas.addEventListener("pointercancel",e=>{draggingBearing=false});
+
+
+function launchTorpedoes(){
+  const sub=contacts.find(c=>c.type==="sub");
+  if(!sub || won || fired) return;
+
+  fired=true;
+  const fireBearing=norm360(selectedBearing);
+  const candidates=[];
+
+  for(const c of contacts){
+    if(c.active===false) continue;
+    const r=dist(own,c);
+    if(r>WIN_KM) continue;
+    const b=bearing(own,c);
+    const err=Math.abs(((fireBearing-b+540)%360)-180);
+    if(err<=5){
+      candidates.push({contact:c,range:r,error:err});
+    }
+  }
+
+  candidates.sort((a,b)=>a.range-b.range);
+  const selected=candidates.length?candidates[0]:null;
+  const result = selected ? (selected.contact.type==="sub" ? "sub" : "neutral") : "miss";
+  const target = selected ? selected.contact : null;
+
+  const fireUnit=unit(fireBearing);
+  const launchOffset=0.55; // km, visual offset so weapon starts clear of the FF symbol
+
+  torpedo={
+    x:own.x + fireUnit.x*launchOffset,
+    y:own.y + fireUnit.y*launchOffset,
+    bearing:fireBearing,
+    speed:165,       // visual run-out speed, slower than previous build
+    travelled:launchOffset,
+    maxRange:WIN_KM,
+    result:result,
+    targetX:target?target.x:null,
+    targetY:target?target.y:null
+  };
+
+  addActivePing(torpedo,"torpedo");
+  torpedo.lastPing=simTime;
+
+  const lb=document.getElementById("launchBtn");
+  if(lb){
+    lb.disabled=true;
+    lb.classList.add("launched");
+    lb.textContent="Torpedo launched";
+  }
+  drawAll();
+}
+function showResult(title,text){
+  const modal=document.getElementById("resultModal");
+  document.getElementById("modalTitle").textContent=title;
+  document.getElementById("modalText").textContent=text;
+  modal.style.display="flex";
+}
+function closeResultAndNewGame(){
+  document.getElementById("resultModal").style.display="none";
+  newGame();
+}
+function updateTorpedo(dt){
+  if(!torpedo || won) return;
+
+  const step=kmPerSec(torpedo.speed)*dt;
+
+  if(torpedo.result==="sub" || torpedo.result==="neutral"){
+    const dx=torpedo.targetX-torpedo.x, dy=torpedo.targetY-torpedo.y;
+    const d=Math.hypot(dx,dy);
+    if(d<=step || d<0.06){
+      torpedo.x=torpedo.targetX;
+      torpedo.y=torpedo.targetY;
+      running=false;
+      document.getElementById("playBtn").textContent="Complete";
+      const minutes=Math.floor(simTime/60),seconds=Math.floor(simTime%60).toString().padStart(2,"0");
+
+      if(torpedo.result==="sub"){
+        won=true;
+        if(practiceReveal){
+          showResult("Exercise complete","No time awarded for this exercise.");
+        }else{
+          showResult("Target sunk","Congratulations, your time was "+minutes+":"+seconds+".");
+        }
+      }else{
+        showResult("Catastrophic ending","Neutral vessel struck. Relieved of command.");
+        torpedo=null;
+      }
+      return;
+    }
+    torpedo.x += (dx/d)*step;
+    torpedo.y += (dy/d)*step;
+    torpedo.travelled += step;
+  }else{
+    const u=unit(torpedo.bearing);
+    torpedo.x += u.x*step;
+    torpedo.y += u.y*step;
+    torpedo.travelled += step;
+    if(torpedo.travelled>=torpedo.maxRange){
+      running=false;
+      document.getElementById("playBtn").textContent="Play / Pause";
+      torpedo=null;
+      showResult("Target missed","Mission failed. Try again.");
+      return;
+    }
+  }
+}
+function drawTorpedo(ctx,t,size){
+  const p=toCanvas({x:t.x,y:t.y},size);
+  ctx.save();
+
+  // Blue NATO-style weapon marker, kept small so it sits with the rest of the plot symbology.
+  ctx.strokeStyle="#4db7ff";
+  ctx.fillStyle="#4db7ff";
+  ctx.lineWidth=2;
+  const r=6;
+
+  ctx.beginPath();
+  ctx.arc(p.x,p.y,r,0,Math.PI*2);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(p.x-r*0.9,p.y);
+  ctx.lineTo(p.x+r*0.65,p.y);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(p.x-r*0.15,p.y-r*0.65);
+  ctx.lineTo(p.x-r*0.6,p.y-r);
+  ctx.moveTo(p.x-r*0.15,p.y+r*0.65);
+  ctx.lineTo(p.x-r*0.6,p.y+r);
+  ctx.stroke();
+
+  ctx.restore();
+}
+function updateLaunchButton(){
+  const lb=document.getElementById("launchBtn");
+  if(!lb) return;
+  lb.disabled=fired||won;
+}
+function formatDMM(value,isLat){
+  const hemi=value>=0 ? (isLat?"N":"E") : (isLat?"S":"W");
+  const abs=Math.abs(value);
+  const deg=Math.floor(abs);
+  const mins=(abs-deg)*60;
+  return deg.toString().padStart(isLat?2:3,"0")+"°"+mins.toFixed(3).padStart(6,"0")+"'"+hemi;
+}
+function ownLatLong(){
+  // Fixed arbitrary south-west corner reference for the exercise area.
+  const baseLat=51 + 50.000/60;  // 51°50.000'N
+  const baseLon=-(8 + 17.000/60); // 008°17.000'W
+  const lat=baseLat + own.y/111.32;
+  const lon=baseLon + own.x/(111.32*Math.cos(rad(baseLat)));
+  return formatDMM(lat,true)+"  "+formatDMM(lon,false);
+}
+function updateReadout(){
+  updateLaunchButton();
+  document.getElementById("orderedSpeedText").textContent=parseFloat(document.getElementById("speed").value).toFixed(0);
+  document.getElementById("orderedCourseText").textContent=Math.round(orderedCourse).toString().padStart(3,"0");
+  const orderedStatus=document.getElementById("orderedStatus");
+  const actualStatus=document.getElementById("actualStatus");
+  if(orderedStatus) orderedStatus.textContent=Math.round(orderedCourse).toString().padStart(3,"0")+"°T / "+parseFloat(document.getElementById("speed").value).toFixed(0)+" kt";
+  if(actualStatus && own) actualStatus.textContent=Math.round(own.course).toString().padStart(3,"0")+"°T / "+own.speed.toFixed(1)+" kt";
+  const minutes=Math.floor(simTime/60);
+  const seconds=Math.floor(simTime%60).toString().padStart(2,"0");
+  document.getElementById("readout").innerHTML=
+    "<div class='elapsedBox'>"+minutes+":"+seconds+"</div>"+
+    "<div class='objectiveBox'>Locate and close SSK to 3,000 yards.<span>Environment profile INDIA</span></div>";
+  const posEl=document.getElementById("orderPosBox");
+  if(posEl) posEl.textContent="POS: "+ownLatLong();
+}
+function drawAll(){drawPlot();drawCompass();drawWaterfall();updateReadout();updateMPAUI()}
+function loop(t){if(!running)return;if(lastFrame===null)lastFrame=t;const dt=Math.min(.05,(t-lastFrame)/1000);lastFrame=t;update(dt);drawAll();requestAnimationFrame(loop)}
+document.getElementById("speed").addEventListener("input",drawAll);
+document.getElementById("speed").addEventListener("change",drawAll);
+document.getElementById("timeScale").addEventListener("change",drawAll);
+plotCanvas.addEventListener("pointerdown",handlePlotPointer);
+window.addEventListener("resize",drawAll);
+newGame();
+</script>
+</body>
+</html>
