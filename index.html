@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#061019">
-<title>Passive Sonar Search Game v4.3</title>
+<title>Passive Sonar Search Game v4.6</title>
 <style>
 :root{
   --bg:#061019;--panel:#0b1620;--ink:#dbe7f0;--muted:#8ea0ae;
@@ -653,11 +653,73 @@ html.desktop-platform .launchBtn{
   vertical-align:top !important;
 }
 
+
+/* v4.5 EXTAC-style compact ops log */
+#opsLogPanel{
+  padding:8px !important;
+}
+.opsLog{
+  height:76px;
+  overflow-y:auto;
+  background:#071522;
+  border:1px solid #54738c;
+  border-radius:7px;
+  padding:6px 7px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-size:11.3px;
+  line-height:1.34;
+  color:#dce9f2;
+  scrollbar-width:thin;
+}
+.opsLine{
+  margin:0 0 4px;
+  opacity:.96;
+  white-space:normal;
+}
+.opsLine .opsTime{
+  color:#ffd36f;
+  font-weight:900;
+}
+.opsLine .opsSource{
+  color:#58bfff;
+  font-weight:900;
+}
+.opsLine.alert{
+  color:#ffd6d6;
+}
+.opsLine.track{
+  color:#e7f4ff;
+}
+.opsLine.admin{
+  color:#c9d7e3;
+}
+html.desktop-platform #opsLogPanel{
+  grid-area:opslog !important;
+}
+html.desktop-platform .wrap{
+  grid-template-areas:
+    "gameplay plot"
+    "opslog   plot"
+    "ownship  plot"
+    "torpedo  waterfall"
+    "mpa      waterfall"
+    "reveal   waterfall" !important;
+}
+html.desktop-platform .opsLog{
+  height:80px;
+}
+html.mobile-platform .opsLog{
+  height:72px;
+}
+@media (max-width:700px){
+  .opsLog{height:68px;font-size:10.8px}
+}
+
 </style>
 </head>
 <body>
 <header>
-  <h1>Passive Sonar Search Game v4.3</h1>
+  <h1>Passive Sonar Search Game v4.6</h1>
   <div class="dev">Real-time passive sonar training game · FS62 contrast build</div>
 </header>
 
@@ -694,6 +756,11 @@ html.desktop-platform .launchBtn{
   <div class="win" id="winBox"></div>
   <div class="readout" id="readout"></div>
 </section>
+
+<div class="box" id="opsLogPanel">
+  <h2>Ops Log</h2>
+  <div id="opsLog" class="opsLog" aria-live="polite"></div>
+</div>
 
 <div class="controlsPanel" id="ownshipPanel">
   <h2>Own Ship Orders: FS62</h2>
@@ -892,7 +959,7 @@ function newGame(){
   contacts.push({type:"sub",id:"SSK",x:sub.x,y:sub.y,course:norm360(reciprocal+crossOffset),speed:10+Math.random()*2,strength:.34,visible:false,active:true,track:[]});
   setupTraffic();
   for(const c of contacts)c.track=[{x:c.x,y:c.y,t:0}];
-  samples=[];noise=[];activePings=[];preloadNoise();addSamples();drawAll();
+  samples=[];noise=[];activePings=[];preloadNoise();addSamples();drawAll();resetOpsLog();
 }
 function togglePlay(){if(won)return;running=!running;document.getElementById("playBtn").textContent=running?"Pause":"Play / Pause";lastFrame=null;requestAnimationFrame(loop)}
 
@@ -1131,6 +1198,7 @@ function update(dt){
   updateTorpedo(dt);
   updateMPA(dt);
   updateActivePings();
+  updateOpsLog();
   clean()
 }
 function toCanvas(p,size){const m=26,s=Math.min((size.w-2*m)/AREA,(size.h-2*m)/AREA),ox=m+((size.w-2*m)-AREA*s)/2,oy=m+AREA*s+((size.h-2*m)-AREA*s)/2;return{x:ox+p.x*s,y:oy-p.y*s,scale:s,ox:ox,oy:oy}}
@@ -1171,6 +1239,183 @@ function drawTrack(ctx,track,size,col,width=1.4,alpha=1){
   ctx.restore();
 }
 
+let opsLines=[];
+let opsLastSurfaceReport=-999;
+let opsLastSurfaceIndex=-1;
+let opsLastSubReport=-999;
+let opsLastSitreps=-999;
+let opsLostReported={};
+let opsCallsignPool=["FS62"];
+let opsTrackBase=2100;
+
+function opsPad(n,len=3){return Math.round(n).toString().padStart(len,"0")}
+function opsTime(){
+  const m=Math.floor(simTime/60).toString().padStart(2,"0");
+  const s=Math.floor(simTime%60).toString().padStart(2,"0");
+  return m+":"+s;
+}
+function opsBearingFromOwn(c){return opsPad(bearing(own,c),3)}
+function opsDistanceMiles(c){
+  const nm=dist(own,c)/1.852;
+  const whole=Math.floor(nm);
+  const dec=Math.floor((nm-whole)*10);
+  return whole+" DECIMAL "+dec;
+}
+function opsRangeHundredsYards(c){
+  return Math.max(1,Math.round(dist(own,c)/0.09144));
+}
+function opsCourse(c){return opsPad(c.course,3)}
+function opsSpeed(c){return Math.max(1,Math.round(c.speed))}
+function opsIdentity(c){
+  if(c.type==="merchant"||c.type==="fishing") return "NEUTRAL";
+  if(c.type==="sub") return "SUBSURFACE UNKNOWN";
+  return "UNKNOWN";
+}
+function opsSource(c){
+  return "FS62";
+}
+function opsAssignTracks(){
+  let neutralNo=0;
+  for(const c of contacts){
+    if(!c.trackNo){
+      if(c.type==="merchant"){
+        neutralNo++;
+        c.trackNo=opsTrackBase+neutralNo;
+        c.reportSource="FS62";
+        c.reportName="MV"+neutralNo;
+      }else if(c.type==="fishing"){
+        c.trackNo=opsTrackBase+3;
+        c.reportSource="FS62";
+        c.reportName="FV";
+      }else if(c.type==="sub"){
+        c.trackNo=3236;
+        c.reportSource="FS62";
+        c.reportName="SONAR CONTACT";
+      }
+    }
+  }
+}
+function opsSurfaceReport(c,reportType="INITIAL"){
+  const src=opsSource(c);
+  return "OTC THIS IS "+src+"-"+reportType+"-"+opsIdentity(c)+" TRACK "+c.trackNo+
+    "-BEARING "+opsBearingFromOwn(c)+"-DISTANCE "+opsDistanceMiles(c)+
+    "-TRACKING "+opsCourse(c)+"-SPEED "+opsSpeed(c)+"-OVER";
+}
+function opsSurfaceMakeReport(c){
+  const src=opsSource(c);
+  return "OTC THIS IS "+src+"-I MAKE-NEUTRAL TRACK "+c.trackNo+
+    "-BEARING "+opsBearingFromOwn(c)+"-DISTANCE "+opsDistanceMiles(c)+
+    "-TRACKING "+opsCourse(c)+"-SPEED "+opsSpeed(c)+"-OVER";
+}
+function opsSubReport(reportType="INITIAL"){
+  const sub=contacts.find(c=>c.type==="sub");
+  if(!sub) return "";
+  return "OTC THIS IS FS62-"+reportType+"-SUBSURFACE UNKNOWN TRACK "+sub.trackNo+
+    "-BEARING "+opsBearingFromOwn(sub)+"-RANGE "+opsRangeHundredsYards(sub)+
+    "-SONAR CONTACT "+sub.trackNo+"-OVER";
+}
+function opsSITREP(){
+  const activeNeutrals=contacts.filter(c=>(c.type==="merchant"||c.type==="fishing") && c.active!==false);
+  if(!activeNeutrals.length) return "OTC THIS IS FS62-SITREP-NO ACTIVE NEUTRAL SURFACE TRACKS-OVER";
+  const parts=activeNeutrals.slice(0,3).map(c=>"NEUTRAL "+c.trackNo+" BEARING "+opsBearingFromOwn(c)+" TRACKING "+opsCourse(c)+" SPEED "+opsSpeed(c));
+  return "OTC THIS IS FS62-SITREP-"+parts.join("; ")+"-OVER";
+}
+function addOpsLog(source,text,kind="track"){
+  const line={t:opsTime(),source,text,kind};
+  opsLines.unshift(line);
+  if(opsLines.length>56) opsLines.pop();
+  renderOpsLog();
+}
+function addOpsTransmission(text,kind="track"){
+  addOpsLog("LOG",text,kind);
+}
+function renderOpsLog(){
+  const el=document.getElementById("opsLog");
+  if(!el) return;
+  el.innerHTML=opsLines.map(l=>"<div class='opsLine "+l.kind+"'><span class='opsTime'>"+l.t+"</span> <span class='opsSource'>"+l.source+"</span> "+l.text+"</div>").join("");
+  el.scrollTop=0;
+}
+function resetOpsLog(){
+  opsLines=[];
+  opsLastSurfaceReport=-999;
+  opsLastSurfaceIndex=-1;
+  opsLastSubReport=-999;
+  opsLastSitreps=-999;
+  opsLostReported={};
+  opsAssignTracks();
+
+  addOpsTransmission("OTC THIS IS FS62-COMMS CHECK-TG SURFACE NET OPEN-OVER","admin");
+
+  const neutrals=contacts.filter(c=>c.type==="merchant"||c.type==="fishing");
+  for(const c of neutrals){
+    addOpsTransmission(opsSurfaceReport(c,"INITIAL"),"track");
+  }
+}
+function updateOpsLog(){
+  if(!running || won) return;
+  opsAssignTracks();
+
+  const neutrals=contacts.filter(c=>c.type==="merchant"||c.type==="fishing");
+
+  // Report lost surface tracks as they leave the area.
+  for(const c of neutrals){
+    if(c.active===false && !opsLostReported[c.trackNo]){
+      addOpsTransmission("OTC THIS IS "+opsSource(c)+"-LOST-NEUTRAL TRACK "+c.trackNo+"-CONTACT LEFT SEARCH AREA-OVER","track");
+      opsLostReported[c.trackNo]=true;
+    }
+  }
+
+  // Regular amplifying reports on real surface contacts.
+  const activeNeutrals=neutrals.filter(c=>c.active!==false);
+  if(activeNeutrals.length && simTime-opsLastSurfaceReport>32){
+    opsLastSurfaceIndex=(opsLastSurfaceIndex+1)%activeNeutrals.length;
+    const c=activeNeutrals[opsLastSurfaceIndex];
+
+    const close=dist(own,c)<5.0;
+    if(close){
+      addOpsTransmission(opsSurfaceMakeReport(c),"track");
+    }else{
+      addOpsTransmission(opsSurfaceReport(c,"AMPLIFYING"),"track");
+    }
+    opsLastSurfaceReport=simTime;
+  }
+
+  // Occasional compact SITREP, not repetitive "no update" filler.
+  if(simTime-opsLastSitreps>115 && activeNeutrals.length){
+    addOpsTransmission(opsSITREP(),"admin");
+    opsLastSitreps=simTime;
+  }
+
+  // Subsurface reports only when there is actual signal or weapon-range relevance.
+  const sub=contacts.find(c=>c.type==="sub");
+  if(sub){
+    const r=dist(own,sub);
+    const sig=sub.lastSig||0;
+    if(sig>.045 && simTime-opsLastSubReport>42){
+      addOpsTransmission(opsSubReport("INITIAL"),"alert");
+      opsLastSubReport=simTime;
+    }else if(sig>.08 && simTime-opsLastSubReport>28){
+      addOpsTransmission(opsSubReport("AMPLIFYING"),"alert");
+      opsLastSubReport=simTime;
+    }else if(r<WIN_KM && simTime-opsLastSubReport>18){
+      addOpsTransmission("OTC THIS IS FS62-FLASH-SUBSURFACE UNKNOWN TRACK "+sub.trackNo+"-WITHIN WEAPON RANGE-OVER","alert");
+      opsLastSubReport=simTime;
+    }
+  }
+
+  if(mpa && mpa.buoys){
+    const detecting=mpa.buoys.some(b=>b.detecting);
+    if(detecting && !lastOpsBuoyDetect){
+      addOpsTransmission("OTC THIS IS FS62-FLASH-SUBSURFACE UNKNOWN-ACTIVE BUOY CONTACT FROM ACTIVE BUOY FIELD-OVER","alert");
+      lastOpsBuoyDetect=true;
+    }else if(!detecting && lastOpsBuoyDetect){
+      addOpsTransmission("OTC THIS IS FS62-LOST-SUBSURFACE CONTACT-BUOY FIELD NO LONGER HOLDING-OVER","alert");
+      lastOpsBuoyDetect=false;
+    }
+  }
+}
+let lastOpsBuoyDetect=false;
+
 function resetRevealUI(){
   const btn=document.getElementById("revealBtn");
   const txt=document.getElementById("revealText");
@@ -1195,6 +1440,7 @@ function applyRevealSubmarine(){
   if(modal) modal.style.display="none";
 
   practiceReveal=true;
+  addOpsTransmission("OTC THIS IS FS62-TRAINING-SSK POSITION REVEALED-SCORE DISABLED-OVER","admin");
   const btn=document.getElementById("revealBtn");
   const txt=document.getElementById("revealText");
   if(btn){
@@ -1220,6 +1466,7 @@ function resetMPA(){
 }
 function taskMPA(){
   if(!mpa || mpa.state!=="ready") return;
+  addOpsTransmission("OTC THIS IS FS62-TASKING-MPA REQUESTED FOR ACTIVE SONOBUOY DEPLOYMENT-OVER","admin");
   mpa.state="selecting";
   mpa.used=true;
   mpa.placements=[];
@@ -1253,6 +1500,7 @@ function updateMPAUI(){
   }
 }
 function scheduleMPA(){
+  addOpsTransmission("OTC THIS IS FS62-MPA ACK-FIVE BUOY POSITIONS RECEIVED-AIRCRAFT EN ROUTE-OVER","admin");
   mpa.state="enroute";
   mpa.eta=120+Math.random()*240; // 2-6 minutes simulated time
   updateMPAUI();
@@ -1292,6 +1540,7 @@ function nearestEdgePoint(p,outside){
 }
 function startMPADeployment(){
   if(!mpa || mpa.placements.length<5) return;
+  addOpsTransmission("OTC THIS IS FS62-MPA ON STATION-COMMENCING ACTIVE BUOY DEPLOYMENT-OVER","admin");
   const first=mpa.placements[0];
   const last=mpa.placements[mpa.placements.length-1];
   const entry=nearestEdgePoint(first,true);
@@ -1331,6 +1580,7 @@ function updateMPA(dt){
       }else{
         mpa.aircraft=null;
         mpa.state="complete";
+        addOpsTransmission("OTC THIS IS FS62-MPA OFF STATION-BUOY FIELD DEPLOYED-RETURNING TO BASE-OVER","admin");
       }
     }else{
       ac.x += (dx/d)*step;
@@ -1760,6 +2010,7 @@ waterfallCanvas.addEventListener("pointercancel",e=>{draggingBearing=false});
 
 
 function launchTorpedoes(){
+  addOpsTransmission("OTC THIS IS FS62-WEAPON-TORPEDO FIRED ON SELECTED BEARING-OVER","alert");
   const sub=contacts.find(c=>c.type==="sub");
   if(!sub || won || fired) return;
 
@@ -1850,9 +2101,11 @@ function updateTorpedo(dt){
         if(practiceReveal){
           showResult("Exercise complete","No time awarded for this exercise.");
         }else{
+          addOpsTransmission("OTC THIS IS FS62-ASSESSMENT-TARGET SUNK-OVER","alert");
           showResult("Target sunk","Congratulations, your time was "+minutes+":"+seconds+".");
         }
       }else{
+        addOpsTransmission("OTC THIS IS FS62-CATASTROPHIC-NEUTRAL VESSEL STRUCK-OVER","alert");
         showResult("Catastrophic ending","Neutral vessel struck. Relieved of command.");
         torpedo=null;
       }
@@ -1870,6 +2123,7 @@ function updateTorpedo(dt){
       running=false;
       document.getElementById("playBtn").textContent="Play / Pause";
       torpedo=null;
+      addOpsTransmission("OTC THIS IS FS62-ASSESSMENT-TORPEDO RUN COMPLETE-TARGET MISSED-OVER","alert");
       showResult("Target missed","Mission failed. Try again.");
       return;
     }
