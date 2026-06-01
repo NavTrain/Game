@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#061019">
-<title>Passive Sonar Search Game v4.8</title>
+<title>Passive Sonar Search Game v4.9</title>
 <style>
 :root{
   --bg:#061019;--panel:#0b1620;--ink:#dbe7f0;--muted:#8ea0ae;
@@ -731,7 +731,7 @@ html.mobile-platform .opsLog{
 </head>
 <body>
 <header>
-  <h1>Passive Sonar Search Game v4.8</h1>
+  <h1>Passive Sonar Search Game v4.9</h1>
   <div class="dev">Real-time passive sonar training game · FS62 contrast build</div>
 </header>
 
@@ -1180,7 +1180,7 @@ function advanceContact(c,dt){
   c.track=c.track.filter(p=>simTime-p.t<=900);
 }
 function update(dt){
-  const timeScale=parseFloat(document.getElementById("timeScale")?.value||"1");
+  const timeScale=getTimeScaleValue();
   dt*=timeScale;
   simTime+=dt;
 
@@ -2086,7 +2086,9 @@ function showResult(title,text){
 }
 function closeResultAndNewGame(){
   document.getElementById("resultModal").style.display="none";
-  
+  newGame();
+}
+
 function getTimeScaleValue(){
   const el=document.getElementById("timeScale");
   const raw=el ? Number(el.value) : 1;
@@ -2106,9 +2108,6 @@ function updatePlatformMode(){
 updatePlatformMode();
 window.addEventListener("resize",updatePlatformMode);
 
-updateTimeScaleLabel();
-newGame();
-}
 function updateTorpedo(dt){
   if(!torpedo || won) return;
 
@@ -2229,6 +2228,7 @@ document.getElementById("timeScale").addEventListener("input",()=>{updateTimeSca
 document.getElementById("timeScale").addEventListener("change",()=>{updateTimeScaleLabel();drawAll();});
 plotCanvas.addEventListener("pointerdown",handlePlotPointer);
 window.addEventListener("resize",drawAll);
+updateTimeScaleLabel();
 newGame();
 </script>
 </body>
